@@ -1,0 +1,128 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+ <!--
+ 
+ IMPORTANT NOTE
+ 
+ This DataSource does not have TimeoutSecond as an overrideble parameter. And since has been imported to the GUMRUK MG we were not able to delete. 
+ If you are going to use this MP in another MG you can safely delete this one.
+ -->
+  
+  <TypeDefinitions>
+    <ModuleTypes>
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" />
+          </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.Powershell">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+                <ScriptName>IMELongRunningRequest.ps1</ScriptName>
+                <ScriptBody>
+                  <![CDATA[
+
+param($debug)
+$SCRIPT_NAME = 'IMELongRunningRequest.ps1'
+$EVENT_LEVEL_ERROR=1
+$EVENT_LEVEL_WARNING=2
+$EVENT_LEVEL_INFO=4
+$SCRIPT_STARTED = 901
+$PROPERTYBAG_CREATED=902
+$SCRIPT_ENDED = 910
+
+Import-Module WebAdministration
+
+#==================================================================================
+# Sub:		LogDebugEvent
+# Purpose:	Logs an informational event to the Operations Manager event log 
+#			only if Debug argument is true
+#==================================================================================
+
+function Log-DebugEvent
+{
+param($eventNo,$message)
+$message ="`n" + $message
+if ($debug -eq $true) 
+{
+$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
+}
+}
+
+$api=New-Object -ComObject 'Mom.ScriptApi'
+$message='Script started'
+Log-DebugEvent $SCRIPT_STARTED $message
+
+foreach ($app in (Get-ChildItem –Path IIS:\AppPools) )
+{
+$AppName=$app.Name
+$RequestCount = ($app | Get-WebRequest).Count
+$message= $AppName + ' has ' + $RequestCount + ' requests currently'
+Log-DebugEvent $PROPERTYBAG_CREATED $message
+$bag=$api.CreatePropertyBag()
+$bag.AddValue('AppName',$AppName)
+$bag.AddValue('RequestCount',$RequestCount)
+#Return each property bag as we create and populate it.
+$bag
+}
+Log-DebugEvent $SCRIPT_ENDED 'Script ended.'
+
+]]>
+                </ScriptBody>
+                <SnapIns />
+                <Parameters>
+                  <Parameter>
+                    <Name>debug</Name>
+                    <Value>$Config/Debug$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>60</TimeoutSeconds>
+              </DataSource>
+              <ConditionDetection ID="FilterAppName" TypeID="System!System.ExpressionFilter">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <XPathQuery Type="String">Property[@Name='AppName']</XPathQuery>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/AppName$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="FilterAppName">
+                <Node ID="Script" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest">
+          <Name>(DEPRECATED - DO NOTUSE)IIS.Monitoring.Extensions.DataSource.LongRunningRequest</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

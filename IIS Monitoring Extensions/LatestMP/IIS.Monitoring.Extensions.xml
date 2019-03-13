@@ -1,0 +1,531 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ManagementPack SchemaVersion="2.0" ContentReadable="true" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Manifest>
+    <Identity>
+      <ID>IIS.Monitoring.Extensions</ID>
+      <Version>1.0.0.3</Version>
+    </Identity>
+    <Name>IIS Monitoring Extensions</Name>
+    <References>
+      <Reference Alias="SCDW">
+        <ID>Microsoft.SystemCenter.DataWarehouse.Library</ID>
+        <Version>7.1.10226.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="SC">
+        <ID>Microsoft.SystemCenter.Library</ID>
+        <Version>7.0.8433.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="MWIC">
+        <ID>Microsoft.Windows.InternetInformationServices.CommonLibrary</ID>
+        <Version>10.0.9.1</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Windows">
+        <ID>Microsoft.Windows.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Health">
+        <ID>System.Health.Library</ID>
+        <Version>7.0.8433.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="System">
+        <ID>System.Library</ID>
+        <Version>7.5.8501.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+      <Reference Alias="Performance">
+        <ID>System.Performance.Library</ID>
+        <Version>7.0.8433.0</Version>
+        <PublicKeyToken>31bf3856ad364e35</PublicKeyToken>
+      </Reference>
+    </References>
+  </Manifest>
+  <TypeDefinitions>
+    <ModuleTypes>
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.Powershell">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+                <ScriptName>IMELongRunningRequest.ps1</ScriptName>
+                <ScriptBody>
+                  
+
+param($debug)
+$SCRIPT_NAME = 'IMELongRunningRequest.ps1'
+$EVENT_LEVEL_ERROR=1
+$EVENT_LEVEL_WARNING=2
+$EVENT_LEVEL_INFO=4
+$SCRIPT_STARTED = 901
+$PROPERTYBAG_CREATED=902
+$SCRIPT_ENDED = 910
+
+Import-Module WebAdministration
+
+#==================================================================================
+# Sub:		LogDebugEvent
+# Purpose:	Logs an informational event to the Operations Manager event log 
+#			only if Debug argument is true
+#==================================================================================
+
+function Log-DebugEvent
+{
+param($eventNo,$message)
+$message ="`n" + $message
+if ($debug -eq $true) 
+{
+$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
+}
+}
+
+$api=New-Object -ComObject 'Mom.ScriptApi'
+$message='Script started'
+Log-DebugEvent $SCRIPT_STARTED $message
+
+foreach ($app in (Get-ChildItem –Path IIS:\AppPools) )
+{
+$AppName=$app.Name
+$RequestCount = ($app | Get-WebRequest).Count
+$message= $AppName + ' has ' + $RequestCount + ' requests currently'
+Log-DebugEvent $PROPERTYBAG_CREATED $message
+$bag=$api.CreatePropertyBag()
+$bag.AddValue('AppName',$AppName)
+$bag.AddValue('RequestCount',$RequestCount)
+#Return each property bag as we create and populate it.
+$bag
+}
+Log-DebugEvent $SCRIPT_ENDED 'Script ended.'
+
+
+                </ScriptBody>
+                <SnapIns />
+                <Parameters>
+                  <Parameter>
+                    <Name>debug</Name>
+                    <Value>$Config/Debug$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>60</TimeoutSeconds>
+              </DataSource>
+              <ConditionDetection ID="FilterAppName" TypeID="System!System.ExpressionFilter">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <XPathQuery Type="String">Property[@Name='AppName']</XPathQuery>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/AppName$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="FilterAppName">
+                <Node ID="Script" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.Powershell">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+                <ScriptName>IMELongRunningRequest.ps1</ScriptName>
+                <ScriptBody>
+                  
+
+param($debug)
+$SCRIPT_NAME = 'IMELongRunningRequest.ps1'
+$EVENT_LEVEL_ERROR=1
+$EVENT_LEVEL_WARNING=2
+$EVENT_LEVEL_INFO=4
+$SCRIPT_STARTED = 901
+$MODULE_LOADED = 902
+$PROPERTYBAG_CREATED=903
+$MULTIWORKER=904
+$SCRIPT_ENDED = 910
+
+#==================================================================================
+# Sub:		LogDebugEvent
+# Purpose:	Logs an informational event to the Operations Manager event log 
+#			only if Debug argument is true
+#==================================================================================
+
+function Log-DebugEvent
+{
+param($eventNo,$message)
+$message ="`n" + $message
+if ($debug -eq $true) 
+{
+$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
+}
+}
+
+$message='Script started'
+Log-DebugEvent $SCRIPT_STARTED $message
+$api=New-Object -ComObject 'Mom.ScriptApi'
+
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.Web.Administration")
+
+$message='Assembly Loaded'
+Log-DebugEvent  $MODULE_LOADED $message
+
+$iis = new-object Microsoft.Web.Administration.ServerManager 
+
+$store=@{}
+
+foreach ($wp in $iis.WorkerProcesses) {
+
+$AppName=$wp.AppPoolName
+$RequestCount = ($wp.GetRequests(0)).Count
+
+if ($store.ContainsKey($AppName)) {
+$RequestCount=$store.Item($AppName)+$RequestCount
+$store.Set_Item($AppName, $RequestCount)
+$message="AppName: " + $AppName + "`n" + "Sum: " + $RequestCount
+Log-DebugEvent $MULTIWORKER $message
+} else {
+$store.Add($AppName,$RequestCount)
+$message= $AppName + ' has ' + $RequestCount + ' requests currently'
+Log-DebugEvent $PROPERTYBAG_CREATED $message
+}
+}
+$store.GetEnumerator()| ForEach-Object{
+
+$bag=$api.CreatePropertyBag()
+$bag.AddValue('AppName',$_.Key)
+$bag.AddValue('RequestCount',$_.Value)
+#Return each property bag as we create and populate it.
+$bag
+
+}
+
+                </ScriptBody>
+                <SnapIns />
+                <Parameters>
+                  <Parameter>
+                    <Name>debug</Name>
+                    <Value>$Config/Debug$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+              </DataSource>
+              <ConditionDetection ID="FilterAppName" TypeID="System!System.ExpressionFilter">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <XPathQuery Type="String">Property[@Name='AppName']</XPathQuery>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/AppName$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="FilterAppName">
+                <Node ID="Script" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.Powershell" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ScriptName" type="NonNullString" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ScriptBody" type="NonNullString" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SnapIns" type="SnapInsType" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Parameters" type="NamedParametersType" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="0" maxOccurs="1" name="StrictErrorHandling" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="DS1" TypeID="System!System.SimpleScheduler">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+              </DataSource>
+              <ProbeAction ID="PSScript" TypeID="Windows!Microsoft.Windows.PowerShellPropertyBagProbe">
+                <ScriptName>$Config/ScriptName$</ScriptName>
+                <ScriptBody>$Config/ScriptBody$</ScriptBody>
+                <SnapIns>$Config/SnapIns$</SnapIns>
+                <Parameters>$Config/Parameters$</Parameters>
+                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+                <StrictErrorHandling>$Config/StrictErrorHandling$</StrictErrorHandling>
+              </ProbeAction>
+            </MemberModules>
+            <Composition>
+              <Node ID="PSScript">
+                <Node ID="DS1" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+    <MonitorTypes>
+      <UnitMonitorType ID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" Accessibility="Internal">
+        <MonitorTypeStates>
+          <MonitorTypeState ID="OverErrorThreshold" NoDetection="false" />
+          <MonitorTypeState ID="OverWarningThreshold" NoDetection="false" />
+          <MonitorTypeState ID="UnderThreshold" NoDetection="false" />
+        </MonitorTypeStates>
+        <Configuration>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="WarningThreshold" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="ErrorThreshold" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="WarningThreshold" Selector="$Config/WarningThreshold$" ParameterType="int" />
+          <OverrideableParameter ID="ErrorThreshold" Selector="$Config/ErrorThreshold$" ParameterType="int" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <MonitorImplementation>
+          <MemberModules>
+            <DataSource ID="DS" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+              <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+              <SyncTime>$Config/SyncTime$</SyncTime>
+              <AppName>$Config/AppName$</AppName>
+              <Debug>$Config/Debug$</Debug>
+              <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+            </DataSource>
+            <ConditionDetection ID="FilterUnderThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>LessEqual</Operator>
+                  <ValueExpression>
+                    <Value Type="Integer">$Config/WarningThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+            <ConditionDetection ID="FilterOverWarningThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <And>
+                  <Expression>
+                    <SimpleExpression>
+                      <ValueExpression>
+                        <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                      </ValueExpression>
+                      <Operator>Greater</Operator>
+                      <ValueExpression>
+                        <Value Type="Integer">$Config/WarningThreshold$</Value>
+                      </ValueExpression>
+                    </SimpleExpression>
+                  </Expression>
+                  <Expression>
+                    <SimpleExpression>
+                      <ValueExpression>
+                        <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                      </ValueExpression>
+                      <Operator>Less</Operator>
+                      <ValueExpression>
+                        <Value Type="Integer">$Config/ErrorThreshold$</Value>
+                      </ValueExpression>
+                    </SimpleExpression>
+                  </Expression>
+                </And>
+              </Expression>
+            </ConditionDetection>
+            <ConditionDetection ID="FilterOverErrorThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>Greater</Operator>
+                  <ValueExpression>
+                    <Value Type="Integer">$Config/ErrorThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+          </MemberModules>
+          <RegularDetections>
+            <RegularDetection MonitorTypeStateID="OverErrorThreshold">
+              <Node ID="FilterOverErrorThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+            <RegularDetection MonitorTypeStateID="UnderThreshold">
+              <Node ID="FilterUnderThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+            <RegularDetection MonitorTypeStateID="OverWarningThreshold">
+              <Node ID="FilterOverWarningThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+          </RegularDetections>
+        </MonitorImplementation>
+      </UnitMonitorType>
+    </MonitorTypes>
+  </TypeDefinitions>
+  <Monitoring>
+    <Rules>
+      <Rule ID="IIS.Monitoring.Extensions.Rule.LongRunningRequest" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>PerformanceCollection</Category>
+        <DataSources>
+          <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+            <IntervalSeconds>600</IntervalSeconds>
+            <SyncTime />
+            <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>
+            <Debug>false</Debug>
+            <TimeoutSeconds>30</TimeoutSeconds>
+          </DataSource>
+        </DataSources>
+        <ConditionDetection ID="MapToPerf" TypeID="Performance!System.Performance.DataGenericMapper">
+          <ObjectName>GTB Application Pool</ObjectName>
+          <CounterName>ActiveRequestCount</CounterName>
+          <InstanceName>$Target/Property[Type="System!System.Entity"]/DisplayName$</InstanceName>
+          <Value>$Data/Property[@Name='RequestCount']$</Value>
+        </ConditionDetection>
+        <WriteActions>
+          <WriteAction ID="WriteToDB" TypeID="SC!Microsoft.SystemCenter.CollectPerformanceData" />
+          <WriteAction ID="WriteToDW" TypeID="SCDW!Microsoft.SystemCenter.DataWarehouse.PublishPerformanceData" />
+        </WriteActions>
+      </Rule>
+    </Rules>
+    <Monitors>
+      <UnitMonitor ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest" Accessibility="Public" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" ConfirmDelivery="true">
+        <Category>Custom</Category>
+        <AlertSettings AlertMessage="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+          <AlertOnState>Error</AlertOnState>
+          <AutoResolve>true</AutoResolve>
+          <AlertPriority>Normal</AlertPriority>
+          <AlertSeverity>Error</AlertSeverity>
+        </AlertSettings>
+        <OperationalStates>
+          <OperationalState ID="Error" MonitorTypeStateID="OverErrorThreshold" HealthState="Error" />
+          <OperationalState ID="Warning" MonitorTypeStateID="OverWarningThreshold" HealthState="Warning" />
+          <OperationalState ID="Healthy" MonitorTypeStateID="UnderThreshold" HealthState="Success" />
+        </OperationalStates>
+        <Configuration>
+          <IntervalSeconds>600</IntervalSeconds>
+          <SyncTime />
+          <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>
+          <WarningThreshold>10</WarningThreshold>
+          <ErrorThreshold>20</ErrorThreshold>
+          <Debug>false</Debug>
+          <TimeoutSeconds>30</TimeoutSeconds>
+        </Configuration>
+      </UnitMonitor>
+    </Monitors>
+  </Monitoring>
+  <Presentation>
+    <StringResources>
+      <StringResource ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID" />
+    </StringResources>
+  </Presentation>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="IIS.Monitoring.Extensions">
+          <Name>IIS Monitoring Extensions</Name>
+          <Description>IIS Monitoring Extensions</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest">
+          <Name>(DEPRECATED - DO NOTUSE)IIS.Monitoring.Extensions.DataSource.LongRunningRequest</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+          <Name>Data Source for Request Counts</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.Powershell">
+          <Name>IIS Monitoring DataSource Powershell</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest">
+          <Name>IIS Monitoring MonitorType LongRunningRequest</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest">
+          <Name>LongRunningRequest Monitor</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+          <Name>Application Pool Request count has exceeded the threshold</Name>
+          <Description>
+            AppName:  $Data/Context/DataItem/Property[@Name='AppName']$
+            RequestCount: $Data/Context/DataItem/Property[@Name='RequestCount']$
+          </Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Rule.LongRunningRequest">
+          <Name>Collect IIS Active RequestCount</Name>
+          <Description>Collection rule for Request Count</Description>
+        </DisplayString>
+      </DisplayStrings>
+      <KnowledgeArticles></KnowledgeArticles>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPack>

@@ -12,12 +12,12 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <GenerateSealed>false</GenerateSealed>
-    <Company>MyCompany</Company>
-    <Copyright>Copyright (c) MyCompany. All rights reserved.</Copyright>
-    <DelaySigning>false</DelaySigning>
-    <AssemblyOriginatorKeyFile />
+    <OutputPath>C:\Users\emreg\source\repos\IISMonitoringExtensions\IIS Monitoring Extensions\LatestMP</OutputPath>
+    <GenerateSealed>True</GenerateSealed>
+    <Company>Emre Guclu</Company>
+    <Copyright>Copyright (c) Emre Guclu. All rights reserved.</Copyright>
+    <DelaySigning>False</DelaySigning>
+    <AssemblyOriginatorKeyFile>C:\Users\emreg\source\repos\IISMonitoringExtensions\SCOMKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>false</DebugSymbols>
@@ -29,8 +29,20 @@
     <AssemblyOriginatorKeyFile />
   </PropertyGroup>
   <ItemGroup>
+    <ManagementPackReference Include="Microsoft.SystemCenter.DataWarehouse.Library">
+      <HintPath>C:\Program Files (x86)\System Center Visual Studio Authoring Extensions\References\OM2012R2\Microsoft.SystemCenter.DataWarehouse.Library.mp</HintPath>
+      <Alias>SCDW</Alias>
+      <MinVersion>7.1.10226.0</MinVersion>
+      <PackageToBundle>False</PackageToBundle>
+    </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.SystemCenter.Library">
       <Alias>SC</Alias>
+      <PackageToBundle>False</PackageToBundle>
+    </ManagementPackReference>
+    <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.CommonLibrary">
+      <HintPath>C:\Users\emreg\Documents\Carreer Development\SCOM\management packs\mps\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
+      <Alias>MWIC</Alias>
+      <MinVersion>10.0.9.1</MinVersion>
       <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.Windows.Library">
@@ -49,11 +61,37 @@
       <Alias>Visualization</Alias>
       <PackageToBundle>false</PackageToBundle>
     </ManagementPackReference>
+    <ManagementPackReference Include="System.Performance.Library">
+      <HintPath>C:\Program Files (x86)\System Center Visual Studio Authoring Extensions\References\OM2012R2\System.Performance.Library.mp</HintPath>
+      <Alias>Performance</Alias>
+      <MinVersion>7.0.8433.0</MinVersion>
+      <PackageToBundle>False</PackageToBundle>
+    </ManagementPackReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Modules\IMELongRunningRequestDS.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\IMELongRunningRequestDSv2.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\IMEPowerShellDS.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Monitors\LongRunningRequestMonitor.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Rules\CollectLongRunningRequestRule.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Monitors" />
+    <Folder Include="Modules" />
+    <Folder Include="Rules" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>

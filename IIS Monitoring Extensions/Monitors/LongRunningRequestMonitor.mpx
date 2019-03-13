@@ -1,0 +1,166 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TypeDefinitions>
+    <MonitorTypes>
+      <UnitMonitorType ID="GTB.IIS.Monitoring.MonitorType.LongRunningRequest" Accessibility="Internal">
+        <MonitorTypeStates>
+          <MonitorTypeState ID="OverErrorThreshold" NoDetection="false" />
+          <MonitorTypeState ID="OverWarningThreshold" NoDetection="false" />
+          <MonitorTypeState ID="UnderThreshold" NoDetection="false" />
+        </MonitorTypeStates>
+        <Configuration>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" />
+          <xsd:element minOccurs="1" name="WarningThreshold" type="xsd:integer" />
+          <xsd:element minOccurs="1" name="ErrorThreshold" type="xsd:integer" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" />
+          </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="WarningThreshold" Selector="$Config/WarningThreshold$" ParameterType="int" />
+          <OverrideableParameter ID="ErrorThreshold" Selector="$Config/ErrorThreshold$" ParameterType="int" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+          </OverrideableParameters>
+        <MonitorImplementation>
+          <MemberModules>
+            <DataSource ID="DS" TypeID="GTB.IIS.Monitoring.DataSource.LongRunningRequestV2">
+              <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+              <SyncTime>$Config/SyncTime$</SyncTime>
+              <AppName>$Config/AppName$</AppName>
+              <Debug>$Config/Debug$</Debug>
+              <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+              </DataSource>
+            <ConditionDetection ID="FilterUnderThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>LessEqual</Operator>
+                  <ValueExpression>
+                    <Value Type="Integer">$Config/WarningThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+            <ConditionDetection ID="FilterOverWarningThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <And>
+                  <Expression>
+                    <SimpleExpression>
+                      <ValueExpression>
+                        <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                      </ValueExpression>
+                      <Operator>Greater</Operator>
+                      <ValueExpression>
+                        <Value Type="Integer">$Config/WarningThreshold$</Value>
+                      </ValueExpression>
+                    </SimpleExpression>
+                  </Expression>
+                  <Expression>
+                    <SimpleExpression>
+                      <ValueExpression>
+                        <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                      </ValueExpression>
+                      <Operator>Less</Operator>
+                      <ValueExpression>
+                        <Value Type="Integer">$Config/ErrorThreshold$</Value>
+                      </ValueExpression>
+                    </SimpleExpression>
+                  </Expression>
+                </And>
+              </Expression>
+            </ConditionDetection>
+            <ConditionDetection ID="FilterOverErrorThreshold" TypeID="System!System.ExpressionFilter">
+              <Expression>
+                <SimpleExpression>
+                  <ValueExpression>
+                    <XPathQuery Type="Integer">Property[@Name='RequestCount']</XPathQuery>
+                  </ValueExpression>
+                  <Operator>Greater</Operator>
+                  <ValueExpression>
+                    <Value Type="Integer">$Config/ErrorThreshold$</Value>
+                  </ValueExpression>
+                </SimpleExpression>
+              </Expression>
+            </ConditionDetection>
+          </MemberModules>
+          <RegularDetections>
+            <RegularDetection MonitorTypeStateID="OverErrorThreshold">
+              <Node ID="FilterOverErrorThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+            <RegularDetection MonitorTypeStateID="UnderThreshold">
+              <Node ID="FilterUnderThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+            <RegularDetection MonitorTypeStateID="OverWarningThreshold">
+              <Node ID="FilterOverWarningThreshold">
+                <Node ID="DS" />
+              </Node>
+            </RegularDetection>
+          </RegularDetections>
+        </MonitorImplementation>
+      </UnitMonitorType>
+
+    </MonitorTypes>
+  </TypeDefinitions>
+  <Monitoring>
+    <Monitors>
+      <UnitMonitor ID="GTB.IIS.Monitoring.Monitor.LongRunningRequest" Accessibility="Public" Enabled="false" Target="MWI2!Microsoft.Windows.InternetInformationServices.6.2.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="GTB.IIS.Monitoring.MonitorType.LongRunningRequest" ConfirmDelivery="true">
+        <Category>Custom</Category>
+        <AlertSettings AlertMessage="GTB.IIS.Monitoring.Monitor.LongRunningRequest_AlertMessageResourceID">
+          <AlertOnState>Error</AlertOnState>
+          <AutoResolve>true</AutoResolve>
+          <AlertPriority>Normal</AlertPriority>
+          <AlertSeverity>Error</AlertSeverity>
+        </AlertSettings>
+        <OperationalStates>
+          <OperationalState ID="Error" MonitorTypeStateID="OverErrorThreshold" HealthState="Error" />
+          <OperationalState ID="Warning" MonitorTypeStateID="OverWarningThreshold" HealthState="Warning" />
+          <OperationalState ID="Healthy" MonitorTypeStateID="UnderThreshold" HealthState="Success" />
+        </OperationalStates>
+        <Configuration>
+          <IntervalSeconds>600</IntervalSeconds>
+          <SyncTime />
+          <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>
+          <WarningThreshold>10</WarningThreshold>
+          <ErrorThreshold>20</ErrorThreshold>
+          <Debug>false</Debug>
+          <TimeoutSeconds>30</TimeoutSeconds>
+          </Configuration>
+      </UnitMonitor>
+    </Monitors>
+  </Monitoring>
+  <Presentation>
+    <StringResources>
+      <StringResource ID="GTB.IIS.Monitoring.Monitor.LongRunningRequest_AlertMessageResourceID" />
+    </StringResources>
+  </Presentation>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="GTB.IIS.Monitoring.MonitorType.LongRunningRequest">
+          <Name>GTB IIS Monitoring MonitorType LongRunningRequest</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="GTB.IIS.Monitoring.Monitor.LongRunningRequest">
+          <Name>GTB LongRunningRequest Monitor</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+        <DisplayString ElementID="GTB.IIS.Monitoring.Monitor.LongRunningRequest_AlertMessageResourceID">
+          <Name>Application Pool Request count has exceeded the threshold</Name>
+          <Description>
+            AppName:  $Data/Context/DataItem/Property[@Name='AppName']$
+            RequestCount: $Data/Context/DataItem/Property[@Name='RequestCount']$
+          </Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

@@ -1,0 +1,142 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TypeDefinitions>
+    <ModuleTypes>
+      <DataSourceModuleType ID="GTB.IIS.Monitoring.DataSource.LongRunningRequestV2" Accessibility="Public" Batching="false">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" />
+          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" />
+          <xsd:element minOccurs="1" name="AppName" type="xsd:string" />
+          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" />
+          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" />
+          </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
+          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+        </OverrideableParameters>
+        <ModuleImplementation Isolation="Any">
+          <Composite>
+            <MemberModules>
+              <DataSource ID="Script" TypeID="GTB.IIS.Monitoring.DataSource.Powershell">
+                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+                <SyncTime>$Config/SyncTime$</SyncTime>
+                <ScriptName>GTBLongRunningRequest.ps1</ScriptName>
+                <ScriptBody>
+                  <![CDATA[
+
+param($debug)
+$SCRIPT_NAME = 'GTBLongRunningRequest.ps1'
+$EVENT_LEVEL_ERROR=1
+$EVENT_LEVEL_WARNING=2
+$EVENT_LEVEL_INFO=4
+$SCRIPT_STARTED = 901
+$MODULE_LOADED = 902
+$PROPERTYBAG_CREATED=903
+$MULTIWORKER=904
+$SCRIPT_ENDED = 910
+
+#==================================================================================
+# Sub:		LogDebugEvent
+# Purpose:	Logs an informational event to the Operations Manager event log 
+#			only if Debug argument is true
+#==================================================================================
+
+function Log-DebugEvent
+{
+param($eventNo,$message)
+$message ="`n" + $message
+if ($debug -eq $true) 
+{
+$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
+}
+}
+
+$message='Script started'
+Log-DebugEvent $SCRIPT_STARTED $message
+$api=New-Object -ComObject 'Mom.ScriptApi'
+
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.Web.Administration")
+
+$message='Assembly Loaded'
+Log-DebugEvent  $MODULE_LOADED $message
+
+$iis = new-object Microsoft.Web.Administration.ServerManager 
+
+$store=@{}
+
+foreach ($wp in $iis.WorkerProcesses) {
+
+$AppName=$wp.AppPoolName
+$RequestCount = ($wp.GetRequests(0)).Count
+
+if ($store.ContainsKey($AppName)) {
+$RequestCount=$store.Item($AppName)+$RequestCount
+$store.Set_Item($AppName, $RequestCount)
+$message="AppName: " + $AppName + "`n" + "Sum: " + $RequestCount
+Log-DebugEvent $MULTIWORKER $message
+} else {
+$store.Add($AppName,$RequestCount)
+$message= $AppName + ' has ' + $RequestCount + ' requests currently'
+Log-DebugEvent $PROPERTYBAG_CREATED $message
+}
+}
+$store.GetEnumerator()| ForEach-Object{
+
+$bag=$api.CreatePropertyBag()
+$bag.AddValue('AppName',$_.Key)
+$bag.AddValue('RequestCount',$_.Value)
+#Return each property bag as we create and populate it.
+$bag
+
+}
+]]>
+                </ScriptBody>
+                <SnapIns />
+                <Parameters>
+                  <Parameter>
+                    <Name>debug</Name>
+                    <Value>$Config/Debug$</Value>
+                  </Parameter>
+                </Parameters>
+                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+              </DataSource>
+              <ConditionDetection ID="FilterAppName" TypeID="System!System.ExpressionFilter">
+                <Expression>
+                  <SimpleExpression>
+                    <ValueExpression>
+                      <XPathQuery Type="String">Property[@Name='AppName']</XPathQuery>
+                    </ValueExpression>
+                    <Operator>Equal</Operator>
+                    <ValueExpression>
+                      <Value Type="String">$Config/AppName$</Value>
+                    </ValueExpression>
+                  </SimpleExpression>
+                </Expression>
+              </ConditionDetection>
+            </MemberModules>
+            <Composition>
+              <Node ID="FilterAppName">
+                <Node ID="Script" />
+              </Node>
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System!System.PropertyBagData</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="GTB.IIS.Monitoring.DataSource.LongRunningRequestV2">
+          <Name>Data Source for Request Counts</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

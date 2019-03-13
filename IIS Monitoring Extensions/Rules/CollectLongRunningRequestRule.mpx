@@ -1,0 +1,38 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Monitoring>
+    <Rules>
+      <Rule ID="GTB.IIS.Monitoring.Rule.LongRunningRequest" Enabled="false" Target="MWI2!Microsoft.Windows.InternetInformationServices.6.2.ApplicationPool" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>PerformanceCollection</Category>
+        <DataSources>
+          <DataSource ID="Script" TypeID="GTB.IIS.Monitoring.DataSource.LongRunningRequestV2">
+            <IntervalSeconds>600</IntervalSeconds>
+            <SyncTime />
+            <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>
+            <Debug>false</Debug>
+            <TimeoutSeconds>30</TimeoutSeconds>
+            </DataSource>
+        </DataSources>
+        <ConditionDetection ID="MapToPerf" TypeID="Performance!System.Performance.DataGenericMapper">
+          <ObjectName>GTB Application Pool</ObjectName>
+          <CounterName>ActiveRequestCount</CounterName>
+          <InstanceName>$Target/Property[Type="System!System.Entity"]/DisplayName$</InstanceName>
+          <Value>$Data/Property[@Name='RequestCount']$</Value>
+        </ConditionDetection>
+        <WriteActions>
+          <WriteAction ID="WriteToDB" TypeID="SC!Microsoft.SystemCenter.CollectPerformanceData" />
+          <WriteAction ID="WriteToDW" TypeID="SCDW!Microsoft.SystemCenter.DataWarehouse.PublishPerformanceData" />
+        </WriteActions>
+      </Rule>      
+    </Rules>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="GTB.IIS.Monitoring.Rule.LongRunningRequest">
+          <Name>Collect GTB Active RequestCount</Name>
+          <Description>Collection rule for Request Count</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

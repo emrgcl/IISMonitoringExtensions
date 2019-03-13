@@ -1,0 +1,60 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<TypeDefinitions>
+  <ModuleTypes>
+    <DataSourceModuleType ID="GTB.IIS.Monitoring.DataSource.Powershell" Accessibility="Public" Batching="false">
+      <Configuration>
+        <IncludeSchemaTypes>
+          <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
+        </IncludeSchemaTypes>
+        <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" />
+        <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" />
+        <xsd:element minOccurs="1" name="ScriptName" type="NonNullString" />
+        <xsd:element minOccurs="1" name="ScriptBody" type="NonNullString" />
+        <xsd:element minOccurs="1" name="SnapIns" type="SnapInsType" />
+        <xsd:element minOccurs="1" name="Parameters" type="NamedParametersType" />
+        <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" />
+        <xsd:element minOccurs="0" maxOccurs="1" name="StrictErrorHandling" type="xsd:boolean" />
+      </Configuration>
+      <OverrideableParameters>
+        <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
+        <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
+        <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
+      </OverrideableParameters>
+      <ModuleImplementation Isolation="Any">
+        <Composite>
+          <MemberModules>
+            <DataSource ID="DS1" TypeID="System!System.SimpleScheduler">
+              <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
+              <SyncTime>$Config/SyncTime$</SyncTime>
+            </DataSource>
+            <ProbeAction ID="PSScript" TypeID="Windows!Microsoft.Windows.PowerShellPropertyBagProbe">
+              <ScriptName>$Config/ScriptName$</ScriptName>
+              <ScriptBody>$Config/ScriptBody$</ScriptBody>
+              <SnapIns>$Config/SnapIns$</SnapIns>
+              <Parameters>$Config/Parameters$</Parameters>
+              <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
+              <StrictErrorHandling>$Config/StrictErrorHandling$</StrictErrorHandling>
+            </ProbeAction>
+          </MemberModules>
+          <Composition>
+            <Node ID="PSScript">
+              <Node ID="DS1" />
+            </Node>
+          </Composition>
+        </Composite>
+      </ModuleImplementation>
+      <OutputType>System!System.PropertyBagData</OutputType>
+    </DataSourceModuleType>
+  </ModuleTypes>
+</TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="GTB.IIS.Monitoring.DataSource.Powershell">
+          <Name>GTB IIS Monitoring DataSource Powershell</Name>
+          <Description>Powershell DataSource</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

@@ -1,7 +1,7 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <TypeDefinitions>
     <MonitorTypes>
-      <UnitMonitorType ID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" Accessibility="Internal">
+      <UnitMonitorType ID="IIS.Monitoring.Extensions.MonitorType.RequestCount" Accessibility="Internal">
         <MonitorTypeStates>
           <MonitorTypeState ID="OverErrorThreshold" NoDetection="false" />
           <MonitorTypeState ID="OverWarningThreshold" NoDetection="false" />
@@ -26,7 +26,7 @@
           </OverrideableParameters>
         <MonitorImplementation>
           <MemberModules>
-            <DataSource ID="DS" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+            <DataSource ID="DS" TypeID="IIS.Monitoring.Extensions.DataSource.RequestCount">
               <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
               <SyncTime>$Config/SyncTime$</SyncTime>
               <AppName>$Config/AppName$</AppName>
@@ -112,9 +112,9 @@
   </TypeDefinitions>
   <Monitoring>
     <Monitors>
-      <UnitMonitor ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest" Accessibility="Public" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" ConfirmDelivery="true">
+      <UnitMonitor ID="IIS.Monitoring.Extensions.Monitor.RequestCount" Accessibility="Public" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="IIS.Monitoring.Extensions.MonitorType.RequestCount" ConfirmDelivery="true">
         <Category>Custom</Category>
-        <AlertSettings AlertMessage="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+        <AlertSettings AlertMessage="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID">
           <AlertOnState>Error</AlertOnState>
           <AutoResolve>true</AutoResolve>
           <AlertPriority>Normal</AlertPriority>
@@ -139,21 +139,21 @@
   </Monitoring>
   <Presentation>
     <StringResources>
-      <StringResource ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID" />
+      <StringResource ID="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID" />
     </StringResources>
   </Presentation>
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest">
-          <Name>IIS Monitoring MonitorType LongRunningRequest</Name>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.MonitorType.RequestCount">
+          <Name>IIS Monitoring MonitorType RequestCount</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest">
-          <Name>LongRunningRequest Monitor</Name>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.RequestCount">
+          <Name>Request Count</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID">
           <Name>Application Pool Request count has exceeded the threshold</Name>
           <Description>
             AppName:  $Data/Context/DataItem/Property[@Name='AppName']$

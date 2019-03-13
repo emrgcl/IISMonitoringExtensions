@@ -12,12 +12,12 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>C:\Users\emreg\source\repos\IISMonitoringExtensions\IIS Monitoring Extensions\LatestMP</OutputPath>
+    <OutputPath>C:\Git\IISMonitoringExtensions\IIS Monitoring Extensions\LatestMP\</OutputPath>
     <GenerateSealed>True</GenerateSealed>
     <Company>Emre Guclu</Company>
     <Copyright>Copyright (c) Emre Guclu. All rights reserved.</Copyright>
     <DelaySigning>False</DelaySigning>
-    <AssemblyOriginatorKeyFile>C:\Users\emreg\source\repos\IISMonitoringExtensions\SCOMKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>C:\Git\IISMonitoringExtensions\SCOMKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>false</DebugSymbols>
@@ -39,8 +39,13 @@
       <Alias>SC</Alias>
       <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
+    <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.2012">
+      <HintPath>C:\Program Files (x86)\System Center Management Packs\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.2012.mp</HintPath>
+      <Alias>MWI2</Alias>
+      <MinVersion>7.0.10249.1</MinVersion>
+    </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.CommonLibrary">
-      <HintPath>C:\Users\emreg\Documents\Carreer Development\SCOM\management packs\mps\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
+      <HintPath>C:\Program Files (x86)\System Center Management Packs\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
       <Alias>MWIC</Alias>
       <MinVersion>10.0.9.1</MinVersion>
       <PackageToBundle>False</PackageToBundle>
@@ -59,7 +64,7 @@
     </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.SystemCenter.Visualization.Library">
       <Alias>Visualization</Alias>
-      <PackageToBundle>false</PackageToBundle>
+      <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
     <ManagementPackReference Include="System.Performance.Library">
       <HintPath>C:\Program Files (x86)\System Center Visual Studio Authoring Extensions\References\OM2012R2\System.Performance.Library.mp</HintPath>
@@ -72,19 +77,16 @@
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Modules\IMELongRunningRequestDS.mpx">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Modules\IMELongRunningRequestDSv2.mpx">
+    <Compile Include="Modules\IMERequestCountDS.mpx">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Modules\IMEPowerShellDS.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Monitors\LongRunningRequestMonitor.mpx">
+    <Compile Include="Monitors\RequestCountMonitor.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Rules\CollectLongRunningRequestRule.mpx">
+    <Compile Include="Rules\RequestCountCollRule.mpx">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

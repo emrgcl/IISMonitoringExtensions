@@ -3,7 +3,7 @@
   <Manifest>
     <Identity>
       <ID>IIS.Monitoring.Extensions</ID>
-      <Version>1.0.0.3</Version>
+      <Version>1.0.0.10</Version>
     </Identity>
     <Name>IIS Monitoring Extensions</Name>
     <References>
@@ -46,111 +46,7 @@
   </Manifest>
   <TypeDefinitions>
     <ModuleTypes>
-      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest" Accessibility="Public" Batching="false">
-        <Configuration>
-          <IncludeSchemaTypes>
-            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
-          </IncludeSchemaTypes>
-          <xsd:element minOccurs="1" name="IntervalSeconds" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-          <xsd:element minOccurs="1" name="SyncTime" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-          <xsd:element minOccurs="1" name="AppName" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-          <xsd:element minOccurs="1" name="Debug" type="xsd:boolean" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-        </Configuration>
-        <OverrideableParameters>
-          <OverrideableParameter ID="IntervalSeconds" Selector="$Config/IntervalSeconds$" ParameterType="int" />
-          <OverrideableParameter ID="SyncTime" Selector="$Config/SyncTime$" ParameterType="string" />
-          <OverrideableParameter ID="Debug" Selector="$Config/Debug$" ParameterType="bool" />
-        </OverrideableParameters>
-        <ModuleImplementation Isolation="Any">
-          <Composite>
-            <MemberModules>
-              <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.Powershell">
-                <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
-                <SyncTime>$Config/SyncTime$</SyncTime>
-                <ScriptName>IMELongRunningRequest.ps1</ScriptName>
-                <ScriptBody>
-                  
-
-param($debug)
-$SCRIPT_NAME = 'IMELongRunningRequest.ps1'
-$EVENT_LEVEL_ERROR=1
-$EVENT_LEVEL_WARNING=2
-$EVENT_LEVEL_INFO=4
-$SCRIPT_STARTED = 901
-$PROPERTYBAG_CREATED=902
-$SCRIPT_ENDED = 910
-
-Import-Module WebAdministration
-
-#==================================================================================
-# Sub:		LogDebugEvent
-# Purpose:	Logs an informational event to the Operations Manager event log 
-#			only if Debug argument is true
-#==================================================================================
-
-function Log-DebugEvent
-{
-param($eventNo,$message)
-$message ="`n" + $message
-if ($debug -eq $true) 
-{
-$api.LogScriptEvent($SCRIPT_NAME,$eventNo,$EVENT_LEVEL_INFO,$message)
-}
-}
-
-$api=New-Object -ComObject 'Mom.ScriptApi'
-$message='Script started'
-Log-DebugEvent $SCRIPT_STARTED $message
-
-foreach ($app in (Get-ChildItem –Path IIS:\AppPools) )
-{
-$AppName=$app.Name
-$RequestCount = ($app | Get-WebRequest).Count
-$message= $AppName + ' has ' + $RequestCount + ' requests currently'
-Log-DebugEvent $PROPERTYBAG_CREATED $message
-$bag=$api.CreatePropertyBag()
-$bag.AddValue('AppName',$AppName)
-$bag.AddValue('RequestCount',$RequestCount)
-#Return each property bag as we create and populate it.
-$bag
-}
-Log-DebugEvent $SCRIPT_ENDED 'Script ended.'
-
-
-                </ScriptBody>
-                <SnapIns />
-                <Parameters>
-                  <Parameter>
-                    <Name>debug</Name>
-                    <Value>$Config/Debug$</Value>
-                  </Parameter>
-                </Parameters>
-                <TimeoutSeconds>60</TimeoutSeconds>
-              </DataSource>
-              <ConditionDetection ID="FilterAppName" TypeID="System!System.ExpressionFilter">
-                <Expression>
-                  <SimpleExpression>
-                    <ValueExpression>
-                      <XPathQuery Type="String">Property[@Name='AppName']</XPathQuery>
-                    </ValueExpression>
-                    <Operator>Equal</Operator>
-                    <ValueExpression>
-                      <Value Type="String">$Config/AppName$</Value>
-                    </ValueExpression>
-                  </SimpleExpression>
-                </Expression>
-              </ConditionDetection>
-            </MemberModules>
-            <Composition>
-              <Node ID="FilterAppName">
-                <Node ID="Script" />
-              </Node>
-            </Composition>
-          </Composite>
-        </ModuleImplementation>
-        <OutputType>System!System.PropertyBagData</OutputType>
-      </DataSourceModuleType>
-      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2" Accessibility="Public" Batching="false">
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.RequestCount" Accessibility="Public" Batching="false">
         <Configuration>
           <IncludeSchemaTypes>
             <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
@@ -173,7 +69,7 @@ Log-DebugEvent $SCRIPT_ENDED 'Script ended.'
               <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.Powershell">
                 <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
                 <SyncTime>$Config/SyncTime$</SyncTime>
-                <ScriptName>IMELongRunningRequest.ps1</ScriptName>
+                <ScriptName>IMERequestCount.ps1</ScriptName>
                 <ScriptBody>
                   
 
@@ -322,7 +218,7 @@ $bag
       </DataSourceModuleType>
     </ModuleTypes>
     <MonitorTypes>
-      <UnitMonitorType ID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" Accessibility="Internal">
+      <UnitMonitorType ID="IIS.Monitoring.Extensions.MonitorType.RequestCount" Accessibility="Internal">
         <MonitorTypeStates>
           <MonitorTypeState ID="OverErrorThreshold" NoDetection="false" />
           <MonitorTypeState ID="OverWarningThreshold" NoDetection="false" />
@@ -347,7 +243,7 @@ $bag
         </OverrideableParameters>
         <MonitorImplementation>
           <MemberModules>
-            <DataSource ID="DS" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+            <DataSource ID="DS" TypeID="IIS.Monitoring.Extensions.DataSource.RequestCount">
               <IntervalSeconds>$Config/IntervalSeconds$</IntervalSeconds>
               <SyncTime>$Config/SyncTime$</SyncTime>
               <AppName>$Config/AppName$</AppName>
@@ -435,7 +331,7 @@ $bag
       <Rule ID="IIS.Monitoring.Extensions.Rule.LongRunningRequest" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
         <Category>PerformanceCollection</Category>
         <DataSources>
-          <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+          <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.RequestCount">
             <IntervalSeconds>600</IntervalSeconds>
             <SyncTime />
             <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>
@@ -456,9 +352,9 @@ $bag
       </Rule>
     </Rules>
     <Monitors>
-      <UnitMonitor ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest" Accessibility="Public" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest" ConfirmDelivery="true">
+      <UnitMonitor ID="IIS.Monitoring.Extensions.Monitor.RequestCount" Accessibility="Public" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ParentMonitorID="Health!System.Health.PerformanceState" Remotable="true" Priority="Normal" TypeID="IIS.Monitoring.Extensions.MonitorType.RequestCount" ConfirmDelivery="true">
         <Category>Custom</Category>
-        <AlertSettings AlertMessage="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+        <AlertSettings AlertMessage="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID">
           <AlertOnState>Error</AlertOnState>
           <AutoResolve>true</AutoResolve>
           <AlertPriority>Normal</AlertPriority>
@@ -483,7 +379,7 @@ $bag
   </Monitoring>
   <Presentation>
     <StringResources>
-      <StringResource ID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID" />
+      <StringResource ID="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID" />
     </StringResources>
   </Presentation>
   <LanguagePacks>
@@ -493,11 +389,7 @@ $bag
           <Name>IIS Monitoring Extensions</Name>
           <Description>IIS Monitoring Extensions</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.LongRunningRequest">
-          <Name>(DEPRECATED - DO NOTUSE)IIS.Monitoring.Extensions.DataSource.LongRunningRequest</Name>
-          <Description>Powershell DataSource</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.RequestCount">
           <Name>Data Source for Request Counts</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
@@ -505,15 +397,15 @@ $bag
           <Name>IIS Monitoring DataSource Powershell</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.MonitorType.LongRunningRequest">
-          <Name>IIS Monitoring MonitorType LongRunningRequest</Name>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.MonitorType.RequestCount">
+          <Name>IIS Monitoring MonitorType RequestCount</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest">
-          <Name>LongRunningRequest Monitor</Name>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.RequestCount">
+          <Name>Request Count</Name>
           <Description>Powershell DataSource</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.LongRunningRequest_AlertMessageResourceID">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Monitor.RequestCount_AlertMessageResourceID">
           <Name>Application Pool Request count has exceeded the threshold</Name>
           <Description>
             AppName:  $Data/Context/DataItem/Property[@Name='AppName']$

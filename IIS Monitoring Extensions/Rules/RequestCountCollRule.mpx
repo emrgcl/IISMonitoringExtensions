@@ -4,7 +4,7 @@
       <Rule ID="IIS.Monitoring.Extensions.Rule.LongRunningRequest" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ApplicationPool" ConfirmDelivery="true" Remotable="true" Priority="Normal" DiscardLevel="100">
         <Category>PerformanceCollection</Category>
         <DataSources>
-          <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.LongRunningRequestV2">
+          <DataSource ID="Script" TypeID="IIS.Monitoring.Extensions.DataSource.RequestCount">
             <IntervalSeconds>600</IntervalSeconds>
             <SyncTime />
             <AppName>$Target/Property[Type="System!System.Entity"]/DisplayName$</AppName>

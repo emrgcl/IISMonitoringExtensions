@@ -1,0 +1,18 @@
+<TemplateGroup>
+  <Instances>
+    <Instance ID="Instance20404dd4788c4b2a8acaf4580df22fc9" Type="Microsoft.SystemCenter.Authoring.CodeGeneration.Monitoring.CustomTask" Version="1.0.0.0">
+      <CustomTaskConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <Accessibility>Internal</Accessibility>
+        <Id>ArchiveIISLogs</Id>
+        <DisplayName>Archive IISLogs</DisplayName>
+        <Description>Description for the new agent task.</Description>
+        <Enabled>true</Enabled>
+        <Category>Maintenance</Category>
+        <Timeout>300</Timeout>
+        <Remotable>true</Remotable>
+        <ProbeActionId>PA</ProbeActionId>
+        <WriteActionId>WA</WriteActionId>
+      </CustomTaskConfig>
+    </Instance>
+  </Instances>
+</TemplateGroup>

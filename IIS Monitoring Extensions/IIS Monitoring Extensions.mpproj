@@ -43,6 +43,7 @@
       <HintPath>C:\Program Files (x86)\System Center Management Packs\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.2012.mp</HintPath>
       <Alias>MWI2</Alias>
       <MinVersion>7.0.10249.1</MinVersion>
+      <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.CommonLibrary">
       <HintPath>C:\Program Files (x86)\System Center Management Packs\Microsoft System Center Management Pack for IIS 2012\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
@@ -77,6 +78,9 @@
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Modules\IMEArchiveIISLogs.mpx">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Modules\IMERequestCountDS.mpx">
       <SubType>Code</SubType>
     </Compile>
@@ -89,11 +93,22 @@
     <Compile Include="Rules\RequestCountCollRule.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Tasks\ArchiveIISLogs.mptg.mpx">
+      <SubType>Code</SubType>
+      <DependentUpon>Tasks\ArchiveIISLogs.mptg</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Monitors" />
     <Folder Include="Modules" />
+    <Folder Include="Tasks" />
     <Folder Include="Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Tasks\ArchiveIISLogs.mptg">
+      <SubType>Content</SubType>
+      <Generator>FragmentGenerator</Generator>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>

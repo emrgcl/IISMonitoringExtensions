@@ -78,7 +78,13 @@
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Modules\IMEArchiveIISLogs.mpx">
+    <Compile Include="Modules\IMEArchiveIISLogsProbe.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\IMEArchiveIISLogsWA.mpx">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modules\IMEArchiveIISLogsWeeklyScheduleDS.mpx">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Modules\IMERequestCountDS.mpx">

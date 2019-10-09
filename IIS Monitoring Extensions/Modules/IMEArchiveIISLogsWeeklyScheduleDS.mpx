@@ -1,0 +1,70 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TypeDefinitions>
+    <ModuleTypes>
+      <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule" Accessibility="Public">
+        <Configuration>
+          <IncludeSchemaTypes>
+            <SchemaType>System.ExpressionEvaluatorSchema</SchemaType>
+          </IncludeSchemaTypes>
+          <xsd:element name="StartHour" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element name="EndHour" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element name="DaysOfWeekMask" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+        </Configuration>
+        <OverrideableParameters>
+          <OverrideableParameter ID="StartHour" ParameterType="string" Selector="$Config/StartHour$" />
+          <OverrideableParameter ID="EndHour" ParameterType="string" Selector="$Config/EndHour$" />
+          <OverrideableParameter ID="DaysOfWeekMask" ParameterType="int" Selector="$Config/DaysOfWeekMask$" />
+        </OverrideableParameters>
+        <ModuleImplementation>
+          <Composite>
+            <MemberModules>
+              <DataSource TypeID="System!System.Scheduler" ID="DS">
+                <Scheduler>
+                  <WeeklySchedule>
+                    <Windows>
+                      <Daily>
+                        <Start>$Config/StartHour$</Start>
+                        <End>$Config/EndHour$</End>
+                        <DaysOfWeekMask>$Config/DaysOfWeekMask$</DaysOfWeekMask>
+                      </Daily>
+                    </Windows>
+                  </WeeklySchedule>
+                  <ExcludeDates />
+                </Scheduler>
+              </DataSource>
+            </MemberModules>
+            <Composition>
+              <Node ID="DS" />
+            </Composition>
+          </Composite>
+        </ModuleImplementation>
+        <OutputType>System.TriggerData</OutputType>
+      </DataSourceModuleType>
+    </ModuleTypes>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule">
+          <Name>Weekly Schedule</Name>
+          <Description>A weekly schedule can be used to trigger the data item output at specific times during the day. </Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule" SubElementID="StartHour">
+          <Name>Start</Name>
+          <Description>Starting hour of 24 Hours format</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule" SubElementID="EndHour">
+          <Name>End</Name>
+          <Description>Ending hour of 24 Hours format</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule" SubElementID="DaysOfWeekMask">
+          <Name>DaysOfWeekMask</Name>
+          <Description>
+            Sunday = 1, Monday = 2, Tuesday = 4, Wednesday = 8, Thursday = 16, Friday = 32, Satuday = 64
+            To specify multiple days, add the enumerator values for the days together. For example, for Monday, Wednesday, and Friday, specify 42 (2+8+32).
+          </Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

@@ -65,3 +65,13 @@ To specify multiple days, add the enumerator values for the days together. For e
     </Tasks>
     ```
     - add secure reference to probe and write action modules
+    ```xml
+     <ProbeActionModuleType ID="Microsoft.SQLServer.2012.VerifyWindowsServiceState" Accessibility="Internal" RunAs="SQL!Microsoft.SQLServer.SQLProbeAccount">
+      <TypeDefinitions>
+      <SecureReferences>
+      <SecureReference ID="Microsoft.SQLServer.SQLDefaultAccount" Accessibility="Public" Context="System!System.Entity" />
+      <SecureReference ID="Microsoft.SQLServer.SQLProbeAccount" Accessibility="Public" Context="System!System.Entity" />
+      <SecureReference ID="Microsoft.SQLServer.SQLDiscoveryAccount" Accessibility="Public" Context="System!System.Entity" />
+      </SecureReferences>
+      </TypeDefinitions>
+    ```

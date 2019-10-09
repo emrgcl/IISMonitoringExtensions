@@ -74,4 +74,47 @@ To specify multiple days, add the enumerator values for the days together. For e
       <SecureReference ID="Microsoft.SQLServer.SQLDiscoveryAccount" Accessibility="Public" Context="System!System.Entity" />
       </SecureReferences>
       </TypeDefinitions>
+      <DisplayString ElementID="Microsoft.SQLServer.SQLProbeAccount">
+      <Name>SQL Server Monitoring Account</Name>
+      <Description>This account is used for monitoring of SQL Server 2008, 2008 R2 and 2012.</Description>
+      </DisplayString>
     ```
+    - add maml documentation
+    ```xml
+    <KnowledgeArticle ElementID="Microsoft.SQLServer.Library.AlertsScopeGroupDiscovery" Visible="true">
+      <MamlContent>
+        <maml:section xmlns:maml="http://schemas.microsoft.com/maml/2004/10">
+          <maml:title>Summary</maml:title>
+          <maml:para>This object discovery populates the Alerts Scope group to contain all SQL Server Roles.</maml:para>
+        </maml:section>
+        <maml:section xmlns:maml="http://schemas.microsoft.com/maml/2004/10">
+          <maml:title>Overridable Parameters</maml:title>
+          <maml:table>
+            <maml:row>
+              <maml:entry>
+                <maml:para>Name</maml:para>
+              </maml:entry>
+              <maml:entry>
+                <maml:para>Description</maml:para>
+              </maml:entry>
+              <maml:entry>
+                <maml:para>Default Value</maml:para>
+              </maml:entry>
+            </maml:row>
+            <maml:row>
+              <maml:entry>
+                <maml:para>Enabled</maml:para>
+              </maml:entry>
+              <maml:entry>
+                <maml:para>Enables or disables the workflow.</maml:para>
+              </maml:entry>
+              <maml:entry>
+                <maml:para>Yes</maml:para>
+              </maml:entry>
+            </maml:row>
+          </maml:table>
+        </maml:section>
+      </MamlContent>
+    </KnowledgeArticle>
+    ```
+    

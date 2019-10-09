@@ -4,7 +4,7 @@
       <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" RunAs="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
         <Configuration>
           <IncludeSchemaTypes>
-            <SchemaType>Microsoft.Windows.PowerShellSchema</SchemaType>
+            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
           </IncludeSchemaTypes>
           <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" />
           <xsd:element minOccurs="1" name="LocalDays" type="xsd:integer" />
@@ -17,11 +17,11 @@
         </Configuration>
         <OverrideableParameters>
           <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
-          <OverrideableParameter ID="LocalDays" Selector="$Config/LastNDays$" ParameterType="int" />
+          <OverrideableParameter ID="LocalDays" Selector="$Config/LocalDays$" ParameterType="int" />
           <OverrideableParameter ID="ArchiveDays" Selector="$Config/ArchiveDays$" ParameterType="int" />
           <OverrideableParameter ID="ArchivePath" Selector="$Config/ArchivePath$" ParameterType="string" />
           <OverrideableParameter ID="TempFolder" Selector="$Config/TempFolder$" ParameterType="string" />
-          <OverrideableParameter ID="Logging" Selector="$Config/Debug$" ParameterType="bool" />
+          <OverrideableParameter ID="Logging" Selector="$Config/Logging$" ParameterType="bool" />
         </OverrideableParameters>
         <ModuleImplementation>
           <Composite>
@@ -74,7 +74,7 @@ Param(
     [string]$ArchiveDays = 400,
     [string]$ArchivePath = '\\emreg-om16ms1\c$\ArchiveIISLogs',
     [string]$TempFolder = 'C:\ArchiveIISLLogsTemp',
-    [boolean]$Logging = $true
+    $Logging = $true
 )
 
 class NotEnoughFreeSpaceException : System.Exception {
@@ -738,7 +738,7 @@ function Backup-Logs {
 $StartDate = Get-Date
 
 # Setting Verobse if $Logging set to $true - used for managementpack
-if ($Logging) {
+if ($Logging -eq $true) {
     $VerbosePreference = "continue"
 }
 
@@ -896,17 +896,24 @@ Remove-PSDrive -Name ArchiveIISLogs
                   
 ]]>
                 </ScriptBody>
-                <SnapIns>$Config/SnapIns$</SnapIns>
                 <Parameters>
                   <Parameter>
                     <Name>LocalDays</Name>
                     <Value>$Config/LocalDays$</Value>
+                  </Parameter>
+                  <Parameter>
                     <Name>ArchiveDays</Name>
                     <Value>$Config/ArchiveDays$</Value>
+                  </Parameter>
+                  <Parameter>
                     <Name>ArchivePath</Name>
                     <Value>$Config/ArchivePath$</Value>
+                  </Parameter>
+                  <Parameter>
                     <Name>TempFolder</Name>
                     <Value>$Config/TempFolder$</Value>
+                  </Parameter>
+                  <Parameter>
                     <Name>Logging</Name>
                     <Value>$Config/Logging$</Value>
                   </Parameter>

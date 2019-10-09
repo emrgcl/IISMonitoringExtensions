@@ -1,12 +1,12 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Monitoring>
     <Rules>
-      <Rule ID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.WebServer" ConfirmDelivery="false" Remotable="true" Priority="Normal" DiscardLevel="100">
+      <Rule ID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ServerRole" ConfirmDelivery="false" Remotable="true" Priority="Normal" DiscardLevel="100">
         <Category>Custom</Category>
         <DataSources>
           <DataSource ID="Scheduler" TypeID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule">
             <StartHour>00:00</StartHour>
-            <Endhour>02:00</Endhour>
+            <EndHour>02:00</EndHour>
             <DaysOfWeekMask>127</DaysOfWeekMask>
           </DataSource>
         </DataSources>
@@ -18,8 +18,6 @@
             <ArchivePath>ArchiveIISLogs</ArchivePath>
             <TempFolder></TempFolder>
             <Logging>true</Logging>
-            <StrictErrorHandling/>
-            <SerializationDepth/>
             </WriteAction>
         </WriteActions>
       </Rule>      
@@ -33,6 +31,45 @@
           <Description>Archive IISLogs Daily Rule</Description>
         </DisplayString>
       </DisplayStrings>
+      <!--
+      <KnowledgeArticles>
+      <KnowledgeArticle ElementID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs" Visible="true">
+        <MamlContent>
+          <maml:section xmlns:maml="http://schemas.microsoft.com/maml/2004/10">
+            <maml:title>Archive IISLogs Daily Rule</maml:title>
+            <maml:para>The Archive-IISLogs.ps1 script is scheduled weekly in this rule. </maml:para>
+          </maml:section>
+          <maml:section xmlns:maml="http://schemas.microsoft.com/maml/2004/10">
+            <maml:title>Overridable Parameters</maml:title>
+            <maml:table>
+              <maml:row>
+                <maml:entry>
+                  <maml:para>Name</maml:para>
+                </maml:entry>
+                <maml:entry>
+                  <maml:para>Description</maml:para>
+                </maml:entry>
+                <maml:entry>
+                  <maml:para>Default Value</maml:para>
+                </maml:entry>
+              </maml:row>
+              <maml:row>
+                <maml:entry>
+                  <maml:para>Enabled</maml:para>
+                </maml:entry>
+                <maml:entry>
+                  <maml:para>Enables or disables the workflow.</maml:para>
+                </maml:entry>
+                <maml:entry>
+                  <maml:para>Yes</maml:para>
+                </maml:entry>
+              </maml:row>
+            </maml:table>
+          </maml:section>
+        </MamlContent>
+      </KnowledgeArticle>
+      </KnowledgeArticles>
+      -->
     </LanguagePack>
   </LanguagePacks>
 </ManagementPackFragment>

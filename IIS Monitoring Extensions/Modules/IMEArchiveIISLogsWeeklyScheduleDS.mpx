@@ -4,11 +4,11 @@
       <DataSourceModuleType ID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule" Accessibility="Public">
         <Configuration>
           <IncludeSchemaTypes>
-            <SchemaType>System.ExpressionEvaluatorSchema</SchemaType>
+            <SchemaType>System!System.ExpressionEvaluatorSchema</SchemaType>
           </IncludeSchemaTypes>
           <xsd:element name="StartHour" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
           <xsd:element name="EndHour" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-          <xsd:element name="DaysOfWeekMask" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
+          <xsd:element name="DaysOfWeekMask" type="xsd:integer" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
         </Configuration>
         <OverrideableParameters>
           <OverrideableParameter ID="StartHour" ParameterType="string" Selector="$Config/StartHour$" />
@@ -38,7 +38,7 @@
             </Composition>
           </Composite>
         </ModuleImplementation>
-        <OutputType>System.TriggerData</OutputType>
+        <OutputType>System!System.TriggerData</OutputType>
       </DataSourceModuleType>
     </ModuleTypes>
   </TypeDefinitions>

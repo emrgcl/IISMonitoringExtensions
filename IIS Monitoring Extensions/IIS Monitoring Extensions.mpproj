@@ -17,7 +17,7 @@
     <Company>Emre Guclu</Company>
     <Copyright>Copyright (c) Emre Guclu. All rights reserved.</Copyright>
     <DelaySigning>False</DelaySigning>
-    <AssemblyOriginatorKeyFile>C:\Git\IISMonitoringExtensions\SCOMKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>C:\Repos\IISMonitoringExtensions\SCOMKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>false</DebugSymbols>
@@ -40,13 +40,13 @@
       <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.2012">
-      <HintPath>C:\Repos\IISMonitoringExtensions\References\Microsoft.Windows.InternetInformationServices.2012.mp</HintPath>
+      <HintPath>C:\Users\Emre\source\repos\IISMonitoringExtensions\References\Microsoft.Windows.InternetInformationServices.2012.mp</HintPath>
       <Alias>MWI2</Alias>
       <MinVersion>7.0.10249.1</MinVersion>
       <PackageToBundle>False</PackageToBundle>
     </ManagementPackReference>
     <ManagementPackReference Include="Microsoft.Windows.InternetInformationServices.CommonLibrary">
-      <HintPath>C:\Repos\IISMonitoringExtensions\References\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
+      <HintPath>C:\Users\Emre\source\repos\IISMonitoringExtensions\References\Microsoft.Windows.InternetInformationServices.CommonLibrary.mp</HintPath>
       <Alias>MWIC</Alias>
       <MinVersion>10.0.9.1</MinVersion>
       <PackageToBundle>False</PackageToBundle>
@@ -96,25 +96,25 @@
     <Compile Include="Monitors\RequestCountMonitor.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Rules\ArchiveIISLogsDailyRule.mpx">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Rules\RequestCountCollRule.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tasks\ArchiveIISLogs.mptg.mpx">
+    <Compile Include="SecureReferences\IISAdmin.mpx">
       <SubType>Code</SubType>
-      <DependentUpon>Tasks\ArchiveIISLogs.mptg</DependentUpon>
+    </Compile>
+    <Compile Include="Tasks\ArchiveIISLogsTask.mpx">
+      <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Monitors" />
     <Folder Include="Modules" />
+    <Folder Include="SecureReferences" />
     <Folder Include="Tasks" />
     <Folder Include="Rules" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Tasks\ArchiveIISLogs.mptg">
-      <SubType>Content</SubType>
-      <Generator>FragmentGenerator</Generator>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>

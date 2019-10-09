@@ -1,0 +1,38 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Monitoring>
+    <Rules>
+      <Rule ID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.WebServer" ConfirmDelivery="false" Remotable="true" Priority="Normal" DiscardLevel="100">
+        <Category>Custom</Category>
+        <DataSources>
+          <DataSource ID="Scheduler" TypeID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule">
+            <StartHour>00:00</StartHour>
+            <Endhour>02:00</Endhour>
+            <DaysOfWeekMask>127</DaysOfWeekMask>
+          </DataSource>
+        </DataSources>
+        <WriteActions>
+          <WriteAction ID="ExecuteScript" TypeID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
+            <TimeoutSeconds>7200</TimeoutSeconds>
+            <LocalDays>7</LocalDays>
+            <ArchiveDays>400</ArchiveDays>
+            <ArchivePath>ArchiveIISLogs</ArchivePath>
+            <TempFolder></TempFolder>
+            <Logging>true</Logging>
+            <StrictErrorHandling/>
+            <SerializationDepth/>
+            </WriteAction>
+        </WriteActions>
+      </Rule>      
+    </Rules>
+  </Monitoring>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs">
+          <Name>Archive IISLogs Daily Rule</Name>
+          <Description>Archive IISLogs Daily Rule</Description>
+        </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

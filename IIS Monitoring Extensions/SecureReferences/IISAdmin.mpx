@@ -1,0 +1,17 @@
+﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TypeDefinitions>
+    <SecureReferences>
+      <SecureReference ID="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount" Accessibility="Public" Context="System!System.Entity" />
+    </SecureReferences>
+  </TypeDefinitions>
+  <LanguagePacks>
+    <LanguagePack ID="ENU" IsDefault="true">
+      <DisplayStrings>
+      <DisplayString ElementID="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
+        <Name>IIS Monitoring Extensions Probe Account</Name>
+        <Description>This account is used for Archiving IIS logs and other Probe operations.</Description>
+      </DisplayString>
+      </DisplayStrings>
+    </LanguagePack>
+  </LanguagePacks>
+</ManagementPackFragment>

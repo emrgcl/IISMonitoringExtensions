@@ -1,7 +1,7 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <TypeDefinitions>
     <ModuleTypes>
-      <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
+      <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" RunAs="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
         <Configuration>
           <IncludeSchemaTypes>
             <SchemaType>Microsoft.Windows.PowerShellSchema</SchemaType>
@@ -926,32 +926,43 @@ Remove-PSDrive -Name ArchiveIISLogs
       </WriteActionModuleType>
     </ModuleTypes>
   </TypeDefinitions>
-  <!--
+  
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
-        <DisplayString ElementID="" SubElementID="">
-          <Name></Name>
-          <Description></Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
+          <Name>ArchiveIISLogs</Name>
+          <Description>Write Action for ArchiveIISLogs</Description>
         </DisplayString>
-        <DisplayString ElementID="" SubElementID="">
-          <Name></Name>
-          <Description></Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TimeoutSeconds">
+          <Name>Timeout Seconds</Name>
+          <Description>Script Timeout in Seconds</Description>
         </DisplayString>
-        <DisplayString ElementID="" SubElementID="">
-          <Name></Name>
-          <Description></Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="LocalDays">
+          <Name>LocalDays</Name>
+          <Description>Files older than Local days will be compressed and archived.</Description>
         </DisplayString>
-        <DisplayString ElementID="" SubElementID="">
-          <Name></Name>
-          <Description></Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchiveDays">
+          <Name>ArchiveDays</Name>
+          <Description>Zip Files in the Arcive Path older than Archive Days will be deleted. 
+          
+          This setting is for maintaining the remote location that holds the zip files.
+        </Description>
         </DisplayString>
-        <DisplayString ElementID="" SubElementID="">
-          <Name></Name>
-          <Description></Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchivePath">
+          <Name>ArchivePath</Name>
+          <Description>Location to store zip files. Preferably a remote unc path.</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TempFolder">
+          <Name>TempFolder</Name>
+          <Description>Location for temporary storage. script will default into users temporary but it is recommended to dedicate  a local folder with Antivirus exclustions set.</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="Logging">
+          <Name>Logging</Name>
+          <Description>Boolean to enable disable logging. Default is enabled.</Description>
         </DisplayString>
       </DisplayStrings>
     </LanguagePack>
   </LanguagePacks>
-  -->
+  
 </ManagementPackFragment>

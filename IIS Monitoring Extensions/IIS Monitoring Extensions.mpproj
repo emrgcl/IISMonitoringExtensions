@@ -5,7 +5,7 @@
     <RootNamespace>IIS.Monitoring.Extensions</RootNamespace>
     <Name>IIS Monitoring Extensions</Name>
     <ManagementPackName>IIS.Monitoring.Extensions</ManagementPackName>
-    <Version>1.0.0.22</Version>
+    <Version>1.0.0.24</Version>
     <MpFrameworkVersion>v7.0.2</MpFrameworkVersion>
     <MpFrameworkProfile>OM</MpFrameworkProfile>
     <ProductVersion>1.1.0.0</ProductVersion>
@@ -112,9 +112,13 @@
   <ItemGroup>
     <Folder Include="Monitors" />
     <Folder Include="Modules" />
+    <Folder Include="Scripts" />
     <Folder Include="SecureReferences" />
     <Folder Include="Tasks" />
     <Folder Include="Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\Archive-IISLogs.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>

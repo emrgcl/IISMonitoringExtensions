@@ -1,36 +1,4 @@
-﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <TypeDefinitions>
-    <ModuleTypes>
-      <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" RunAs="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
-        <Configuration>
-          <IncludeSchemaTypes>
-            <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
-          </IncludeSchemaTypes>
-          <xsd:element minOccurs="1" name="TimeoutSeconds" type="xsd:integer" />
-          <xsd:element minOccurs="1" name="LocalDays" type="xsd:integer" />
-          <xsd:element minOccurs="1" name="ArchiveDays" type="xsd:integer" />
-          <xsd:element minOccurs="1" name="ArchivePath" type="xsd:string" />
-          <xsd:element minOccurs="1" name="TempFolder" type="xsd:string" />
-          <xsd:element minOccurs="1" name="Logging" type="xsd:boolean" />
-          <xsd:element name="StrictErrorHandling" type="xsd:boolean" minOccurs="0" maxOccurs="1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-          <xsd:element name="SerializationDepth" type="xsd:integer" minOccurs="0" maxOccurs="1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
-        </Configuration>
-        <OverrideableParameters>
-          <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
-          <OverrideableParameter ID="LocalDays" Selector="$Config/LocalDays$" ParameterType="int" />
-          <OverrideableParameter ID="ArchiveDays" Selector="$Config/ArchiveDays$" ParameterType="int" />
-          <OverrideableParameter ID="ArchivePath" Selector="$Config/ArchivePath$" ParameterType="string" />
-          <OverrideableParameter ID="TempFolder" Selector="$Config/TempFolder$" ParameterType="string" />
-          <OverrideableParameter ID="Logging" Selector="$Config/Logging$" ParameterType="bool" />
-        </OverrideableParameters>
-        <ModuleImplementation>
-          <Composite>
-            <MemberModules>
-              <WriteAction ID="PowerShellWriteAction" TypeID="Windows!Microsoft.Windows.PowerShellWriteAction">
-                <ScriptName>Archive-IISLogs.ps1</ScriptName>
-                <ScriptBody>
-                  <![CDATA[
-                <#
+﻿<#
 .SYNOPSIS
     Zips and Archives IIS logs to destination location. 
 .DESCRIPTION
@@ -441,20 +409,16 @@ function Write-Log {
         [string]$Tag 
 
     )
-    WRite-Host "Function scope: $Global:Logfile"
     if (!$LogFile) {
-        if ($Global:LogFile) {
+        if ($Script:LogFile) {
            
-            $LogFile = ($Global:LogFile)
+            $LogFile = ($Script:LogFile)
         
         }
         else {
             $LogFile = "$($Env:Temp)\Write-Log-$(Get-Date -Format yyyy-M-d).log"
         }
     }
-  
-    WRite-Host "Current: $Logfile"
-    
     if ($Tag) {
         $Log = "[$(Get-Date -Format G)][$Level][$($env:ComputerName)][$Tag] $Message"
     }
@@ -742,19 +706,18 @@ function Backup-Logs {
 $StartDate = Get-Date
 
 # Setting Verobse if $Logging set to $true - used for managementpack
-if ($Logging -eq $true) {
+if ($Logging) {
     $VerbosePreference = "continue"
 }
 
 # Initilizing LogFile Variable
-$Global:LogFile = "$TempFolder\Archive-IISLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
-
+[String]$LogFile = "$TempFolder\Archive-IISLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
 
 # Create $TempFolder
 if (!(Test-path -path $TempFolder)) {
 
     try {
-        new-item -Path (Split-Path -Path $TempFolder -Parent) -Name (Split-Path -Path $TempFolder -Leaf) -ItemType Directory -ErrorAction Stop | out-null
+        new-item -Path (Split-Path -Path $TempFolder -Parent) -Name (Split-Path -Path $TempFolder -Leaf) -ItemType Directory -ErrorAction Stop | out-Null
         Write-Log -Message "Successfully Created $TempFolder" 
     }
     catch {
@@ -764,18 +727,15 @@ if (!(Test-path -path $TempFolder)) {
 
 }
 
+
+
 Write-Log -Message "Script started. Username: $($env:USERDOMAIN)\$($env:USERNAME)" -Level Info
-
-Write-Log -Message "Current TempFolder : $TempFolder"
-
-
-Write-output "Verbose: $VerbosePreference`nLogFile = $LogFile`nPowerShell Version: $($PSVersionTable.PSVersion.ToString())"
 
 # Preparing and getting the registry key
 if (!(Test-path -Path HKLM:\SOFTWARE\Archive-IISLogs)) {
     Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs does not exist creating it"
-    New-item -Path HKLM:\SOFTWARE -Name Archive-IISLogs | out-null
-    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder | out-null
+    New-item -Path HKLM:\SOFTWARE -Name Archive-IISLogs | out-Null
+    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder | out-Null
 }
 else {
     Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs exists." 
@@ -788,11 +748,17 @@ else {
     }
 
     # we have previous folder now we can set the current value to registry. 
-    Set-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder | out-null
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder
 }
 
 
 
+
+
+
+Write-Log -Message "Script Started" 
+
+Write-Log -Message "Current TempFolder : $TempFolder"
 
 
 # Resume Compresssion files if theres an existing snapshot in previous or current folders.
@@ -899,81 +865,3 @@ Remove-PSDrive -Name ArchiveIISLogs
 
 
 #Endregion
-                ]]></ScriptBody>
-                <Parameters>
-                  <Parameter>
-                    <Name>LocalDays</Name>
-                    <Value>$Config/LocalDays$</Value>
-                  </Parameter>
-                  <Parameter>
-                    <Name>ArchiveDays</Name>
-                    <Value>$Config/ArchiveDays$</Value>
-                  </Parameter>
-                  <Parameter>
-                    <Name>ArchivePath</Name>
-                    <Value>$Config/ArchivePath$</Value>
-                  </Parameter>
-                  <Parameter>
-                    <Name>TempFolder</Name>
-                    <Value>$Config/TempFolder$</Value>
-                  </Parameter>
-                  <Parameter>
-                    <Name>Logging</Name>
-                    <Value>$Config/Logging$</Value>
-                  </Parameter>
-                </Parameters>
-                <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>
-                <StrictErrorHandling>$Config/StrictErrorHandling$</StrictErrorHandling>
-                <SerializationDepth>$Config/SerializationDepth$</SerializationDepth>
-              </WriteAction>
-            </MemberModules>
-            <Composition>
-              <Node ID="PowerShellWriteAction" />
-            </Composition>
-          </Composite>
-        </ModuleImplementation>
-        <OutputType>Windows!Microsoft.Windows.SerializedObjectData</OutputType>
-        <InputType>System!System.BaseData</InputType>
-      </WriteActionModuleType>
-    </ModuleTypes>
-  </TypeDefinitions>
-  
-  <LanguagePacks>
-    <LanguagePack ID="ENU" IsDefault="true">
-      <DisplayStrings>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
-          <Name>ArchiveIISLogs</Name>
-          <Description>Write Action for ArchiveIISLogs</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TimeoutSeconds">
-          <Name>Timeout Seconds</Name>
-          <Description>Script Timeout in Seconds</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="LocalDays">
-          <Name>LocalDays</Name>
-          <Description>Files older than Local days will be compressed and archived.</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchiveDays">
-          <Name>ArchiveDays</Name>
-          <Description>Zip Files in the Arcive Path older than Archive Days will be deleted. 
-          
-          This setting is for maintaining the remote location that holds the zip files.
-        </Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchivePath">
-          <Name>ArchivePath</Name>
-          <Description>Location to store zip files. Preferably a remote unc path.</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TempFolder">
-          <Name>TempFolder</Name>
-          <Description>Location for temporary storage. script will default into users temporary but it is recommended to dedicate  a local folder with Antivirus exclustions set.</Description>
-        </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="Logging">
-          <Name>Logging</Name>
-          <Description>Boolean to enable disable logging. Default is enabled.</Description>
-        </DisplayString>
-      </DisplayStrings>
-    </LanguagePack>
-  </LanguagePacks>
-  
-</ManagementPackFragment>

@@ -5,7 +5,7 @@
     <RootNamespace>IIS.Monitoring.Extensions</RootNamespace>
     <Name>IIS Monitoring Extensions</Name>
     <ManagementPackName>IIS.Monitoring.Extensions</ManagementPackName>
-    <Version>1.0.0.24</Version>
+    <Version>1.0.0.50</Version>
     <MpFrameworkVersion>v7.0.2</MpFrameworkVersion>
     <MpFrameworkProfile>OM</MpFrameworkProfile>
     <ProductVersion>1.1.0.0</ProductVersion>
@@ -78,13 +78,13 @@
     <Compile Include="ManagementPack.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Modules\IMEArchiveIISLogsProbe.mpx">
+    <Compile Include="Modules\IMEArchiveGenericAppLogsWA.mpx">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Modules\IMEArchiveIISLogsWA.mpx">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Modules\IMEArchiveIISLogsWeeklyScheduleDS.mpx">
+    <Compile Include="Modules\IMEWeeklyScheduleDS.mpx">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Modules\IMERequestCountDS.mpx">
@@ -96,6 +96,9 @@
     <Compile Include="Monitors\RequestCountMonitor.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Rules\ArchiveGenericAppLogssDailyRule.mpx">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Rules\ArchiveIISLogsDailyRule.mpx">
       <SubType>Code</SubType>
     </Compile>
@@ -105,6 +108,9 @@
     <Compile Include="SecureReferences\IISAdmin.mpx">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Tasks\ArchiveGenericAppLogs.mpx">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Tasks\ArchiveIISLogsTask.mpx">
       <SubType>Code</SubType>
     </Compile>
@@ -112,13 +118,9 @@
   <ItemGroup>
     <Folder Include="Monitors" />
     <Folder Include="Modules" />
-    <Folder Include="Scripts" />
     <Folder Include="SecureReferences" />
     <Folder Include="Tasks" />
     <Folder Include="Rules" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Scripts\Archive-IISLogs.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VSAC\Microsoft.SystemCenter.OperationsManager.targets" />
 </Project>

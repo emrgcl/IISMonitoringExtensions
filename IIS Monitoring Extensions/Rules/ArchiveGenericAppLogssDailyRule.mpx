@@ -1,7 +1,7 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Monitoring>
     <Rules>
-      <Rule ID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ServerRole" ConfirmDelivery="false" Remotable="true" Priority="Normal" DiscardLevel="100">
+      <Rule ID="IIS.Monitoring.Extensions.Rule.ArchiveGenericAppLogs" Enabled="false" Target="MWIC!Microsoft.Windows.InternetInformationServices.ServerRole" ConfirmDelivery="false" Remotable="true" Priority="Normal" DiscardLevel="100">
         <Category>Custom</Category>
         <DataSources>
           <DataSource ID="Scheduler" TypeID="IIS.Monitoring.Extensions.DataSource.WeeklySchedule">
@@ -11,12 +11,12 @@
           </DataSource>
         </DataSources>
         <WriteActions>
-          <WriteAction ID="ExecuteScript" TypeID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
+          <WriteAction ID="ExecuteScript" TypeID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs">
             <TimeoutSeconds>7200</TimeoutSeconds>
             <LocalDays>7</LocalDays>
             <ArchiveDays>400</ArchiveDays>
-            <ArchivePath>D:\ArchiveIISLogs</ArchivePath>
-            <TempFolder>C:\ArchiveIISLLogsTemp</TempFolder>
+            <ArchivePath>D:\ArchiveGenericAppLogs</ArchivePath>
+            <TempFolder>C:\ArchiveGenericAppLogsTemp</TempFolder>
             <Logging>true</Logging>
             <InformationAction>SilentlyContinue</InformationAction>
           </WriteAction>
@@ -27,9 +27,9 @@
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Rule.ArchiveIISLogs">
-          <Name>Archive IISLogs Daily Rule</Name>
-          <Description>Archive IISLogs Daily Rule</Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Rule.ArchiveGenericAppLogs">
+          <Name>Archive GenericAppLogs Daily Rule</Name>
+          <Description>Archive GenericAppLogs Daily Rule</Description>
         </DisplayString>
       </DisplayStrings>
       <!--

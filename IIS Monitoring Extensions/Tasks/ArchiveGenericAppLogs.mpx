@@ -1,9 +1,9 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Monitoring>
     <Tasks>
-      <Task ID="IIS.Monitoring.Extensions.Task.ArchiveIISLogs" Accessibility="Public" Enabled="true" Target="MWIC!Microsoft.Windows.InternetInformationServices.ServerRole" Timeout="7200" Remotable="true">
+      <Task ID="IIS.Monitoring.Extensions.Task.ArchiveGenericAppLogs" Accessibility="Public" Enabled="true" Target="MWIC!Microsoft.Windows.InternetInformationServices.ServerRole" Timeout="7200" Remotable="true">
         <Category>Custom</Category>
-        <WriteAction ID="ExecuteScript" TypeID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
+        <WriteAction ID="ExecuteScript" TypeID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs">
           <TimeoutSeconds>7200</TimeoutSeconds>
           <LocalDays>7</LocalDays>
           <ArchiveDays>400</ArchiveDays>
@@ -18,9 +18,9 @@
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.Task.ArchiveIISLogs">
-          <Name>Archive IISLogs Task</Name>
-          <Description>Archive IISLogs Task</Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.Task.ArchiveGenericAppLogs">
+          <Name>Archive GenericAppLogs Task</Name>
+          <Description>Archive GenericAppLogs Task</Description>
         </DisplayString>
       </DisplayStrings>
     </LanguagePack>

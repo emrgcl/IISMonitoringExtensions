@@ -410,9 +410,9 @@ function Write-Log {
 
     )
     if (!$LogFile) {
-        if ($Script:LogFile) {
+        if ($Global:LogFile) {
            
-            $LogFile = ($Script:LogFile)
+            $LogFile = ($Global:LogFile)
         
         }
         else {
@@ -711,31 +711,16 @@ if ($Logging) {
 }
 
 # Initilizing LogFile Variable
-[String]$LogFile = "$TempFolder\Archive-IISLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
+$Global:LogFile = "$TempFolder\Archive-IISLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
 
-# Create $TempFolder
-if (!(Test-path -path $TempFolder)) {
-
-    try {
-        new-item -Path (Split-Path -Path $TempFolder -Parent) -Name (Split-Path -Path $TempFolder -Leaf) -ItemType Directory -ErrorAction Stop | out-Null
-        Write-Log -Message "Successfully Created $TempFolder" 
-    }
-    catch {
-        Write-Log -Message "Could not Create $TempFolder Exception Type: $($_.Exception.GetType().FullName), Message:$($_.Exception.Message)" -LogFile "$($Env:Temp)\Write-Log-$(Get-Date -Format yyyy-M-d).log"
-        Throw
-    }
-
-}
-
-
-
-Write-Log -Message "Script started. Username: $($env:USERDOMAIN)\$($env:USERNAME)" -Level Info
-
+$Message = "Script started. Username: $($env:USERDOMAIN)\$($env:USERNAME)"
+Write-Log -Message $Message -Level Info
+Write-Information -MessageData $Message
 # Preparing and getting the registry key
 if (!(Test-path -Path HKLM:\SOFTWARE\Archive-IISLogs)) {
     Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs does not exist creating it"
-    New-item -Path HKLM:\SOFTWARE -Name Archive-IISLogs | out-Null
-    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder | out-Null
+    New-item -Path HKLM:\SOFTWARE -Name Archive-IISLogs
+    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder
 }
 else {
     Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs exists." 
@@ -752,7 +737,19 @@ else {
 }
 
 
+# Create $TempFolder
+if (!(Test-path -path $TempFolder)) {
 
+    try {
+        new-item -Path (Split-Path -Path $TempFolder -Parent) -Name (Split-Path -Path $TempFolder -Leaf) -ItemType Directory -ErrorAction Stop
+        Write-Log -Message "Successfully Created $TempFolder" 
+    }
+    catch {
+        Write-Log -Message "Could not Create $TempFolder Exception Type: $($_.Exception.GetType().FullName), Message:$($_.Exception.Message)" -LogFile "$($Env:Temp)\Write-Log-$(Get-Date -Format yyyy-M-d).log"
+        Throw
+    }
+
+}
 
 
 
@@ -845,17 +842,21 @@ foreach ($WebSiteInfo in $WebSiteInfos) {
     
 }
 if ($Queue.Count -gt 0) {
+    Write-Information -MessageData "Number of items to be compressed and zipped: $($Queue.Count)"
     Start-CompressionQueue -Queue $Queue -TempFolder $TempFolder -RemoveEmptySnapshot
     # Copy zips to Archive Folder now
     Backup-Logs -Path $TempFolder
+} else {
+    Write-Information  -MessageData 'Nothing to compress.'
 }
+
 
 
 # Removing old zips
 Remove-OldZips -OverrideSettings $OverrideSettings -DefaultSettings $DefaultSettings -ArchivePath $ArchivePath
-
-Write-Log "Script ended. Duration = $([Math]::Round((((Get-Date) - $startdate).TotalSeconds),2)) seconds"
-
+$Message = "Script ended. Duration = $([Math]::Round((((Get-Date) - $startdate).TotalSeconds),2)) seconds"
+Write-Log $Message -Level Info
+Write-Information -MessageData $Message
 # Backup Logs
 Backup-OperationLogs -ArchivePath $ArchivePath -LocalLogPath $TempFolder -Verbose:$false -ErrorAction Stop
     

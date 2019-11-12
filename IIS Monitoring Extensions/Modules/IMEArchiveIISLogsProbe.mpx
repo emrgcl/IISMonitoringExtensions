@@ -13,6 +13,7 @@
           <xsd:element minOccurs="1" name="ArchivePath" type="xsd:string" />
           <xsd:element minOccurs="1" name="TempFolder" type="xsd:string" />
           <xsd:element minOccurs="1" name="Logging" type="xsd:boolean" />
+          <xsd:element minOccurs="1" name="InformationAction" type="xsd:string" />
         </Configuration>
         <OverrideableParameters>
           <OverrideableParameter ID="TimeoutSeconds" Selector="$Config/TimeoutSeconds$" ParameterType="int" />
@@ -21,6 +22,7 @@
           <OverrideableParameter ID="ArchivePath" Selector="$Config/ArchivePath$" ParameterType="string" />
           <OverrideableParameter ID="TempFolder" Selector="$Config/TempFolder$" ParameterType="string" />
           <OverrideableParameter ID="Logging" Selector="$Config/Logging$" ParameterType="bool" />
+          <OverrideableParameter ID="InformationAction" Selector="$Config/InformationAction$" ParameterType="string" />
         </OverrideableParameters>
         <ModuleImplementation>
           <Composite>
@@ -48,6 +50,10 @@
                   <Parameter>
                     <Name>Logging</Name>
                     <Value>$Config/Logging$</Value>
+                  </Parameter>
+                  <Parameter>
+                    <Name>InformationAction</Name>
+                    <Value>$Config/InformationAction$</Value>
                   </Parameter>
                 </Parameters>
                 <TimeoutSeconds>$Config/TimeoutSeconds$</TimeoutSeconds>

@@ -1,7 +1,7 @@
 ﻿<ManagementPackFragment SchemaVersion="2.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <TypeDefinitions>
     <ModuleTypes>
-      <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" RunAs="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
+      <WriteActionModuleType Accessibility="Public" ID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" RunAs="IIS.Monitoring.Extensions.SecureReference.IISProbeAccount">
         <Configuration>
           <IncludeSchemaTypes>
             <SchemaType>Windows!Microsoft.Windows.PowerShellSchema</SchemaType>
@@ -12,7 +12,8 @@
           <xsd:element minOccurs="1" name="ArchivePath" type="xsd:string" />
           <xsd:element minOccurs="1" name="TempFolder" type="xsd:string" />
           <xsd:element minOccurs="1" name="Logging" type="xsd:boolean" />
-          <xsd:element minOccurs="1" name="InformationAction" type="xsd:string" />
+          <xsd:element minOccurs="0" maxOccurs="1" name="InformationAction" type="xsd:string" />
+          <xsd:element  minOccurs="0" maxOccurs="1" name="SettingsPath" type="xsd:string" />
           <xsd:element name="StrictErrorHandling" type="xsd:boolean" minOccurs="0" maxOccurs="1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
           <xsd:element name="SerializationDepth" type="xsd:integer" minOccurs="0" maxOccurs="1" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
         </Configuration>
@@ -23,7 +24,7 @@
           <OverrideableParameter ID="ArchivePath" Selector="$Config/ArchivePath$" ParameterType="string" />
           <OverrideableParameter ID="TempFolder" Selector="$Config/TempFolder$" ParameterType="string" />
           <OverrideableParameter ID="Logging" Selector="$Config/Logging$" ParameterType="bool" />
-          <OverrideableParameter ID="InformationAction" Selector="$Config/InformationAction$" ParameterType="string" />
+          <OverrideableParameter ID="SettingsPath" Selector="$Config/SettingsPath$" ParameterType="string" />
         </OverrideableParameters>
         <ModuleImplementation>
           <Composite>
@@ -32,17 +33,16 @@
                 <ScriptName>Archive-IISLogs.ps1</ScriptName>
                 <ScriptBody>
                   <![CDATA[
-                <#
-<#
+ <#
 .SYNOPSIS
     Zips and Archives IIS logs to destination location. 
 .DESCRIPTION
     Script does Robust operation supporting scenarios like network outage and process terminationation (like server restarts)
 .EXAMPLE
-    PS C:\> .\Archive-IISLogs.ps1 -LocalDays 7 -ArchiveDays 30 -ArchivePath '\\emreg-om16ms1\c$\ArchiveIISLogs' -TempFolder c:\ArchiveIISLLogsTemp -Verbose
+    PS C:\> .\Archive-GenericAppLogs.ps1 -LocalDays 7 -ArchiveDays 30 -ArchivePath '\\emreg-om16ms1\c$\Archive-GenericAppLogs' -TempFolder c:\Archive-GenericAppLogs -Verbose
     
     The above example zips the log files those are older than 7 days and once the compression operation completes copies the files to the Archive path folder and removes the files older than 30 in this Archive folder.
-    The working directory is set to  c:\ArchiveIISLLogsTemp
+    The working directory is set to  c:\Archive-GenericAppLogs
 .PARAMETER LocalDays
     Specifies the number of days to be kept locally on the IIS Server. 
     Log files older than this threshold will be compressed and moved.
@@ -61,6 +61,9 @@
     2. Operation Log (.log)
     3. Snapshots (.xml)
     Please do not delete this folder and add to Antivirus Exclusions.
+.PARAMETER SettingsPath
+    By default settings file should be located under ArchivePath but could  also located under SettingsPath
+  
 .PARAMETER Logging
     Only required if script is used in the SCOM Management pack.
     SCOM does not support swtich paramters. This logging parameter is used as an alternative to -verbose in the management pack.
@@ -75,8 +78,10 @@
 Param(
     [string]$LocalDays = 7,
     [string]$ArchiveDays = 400,
-    [string]$ArchivePath = '\\emreg-om16ms1\c$\ArchiveIISLogs',
-    [string]$TempFolder = 'C:\ArchiveIISLLogsTemp',
+    [Parameter(Mandatory=$true)]
+    [string]$ArchivePath,
+    [string]$TempFolder = 'C:\Archive-GenericAppLogs',
+    [string]$SettingsPath,
     $Logging = $true
 )
 
@@ -90,6 +95,71 @@ class NotEnoughFreeSpaceException : System.Exception {
 
     }
 }
+
+Function Get-SettingsPath {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [string]$SettingsPath,
+        [Parameter(Mandatory = $true)]
+        [string]$ArchivePath
+    )
+
+if ([string]::IsNullOrEmpty($SettingsPath)) {
+    $ArchivePath
+} else {
+    $SettingsPath
+}
+
+}
+
+
+Function Get-LogFileItems {
+    [CmdletBinding()]
+    Param(
+    
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,ValueFromPipeline=$true)]
+    [Alias('Directory,DirectoryName')]
+    [string]$Path,
+    [string]$AppRoot
+    
+    )
+    process {
+        Get-ChildItem -Path $Path -File -PipelineVariable FileItem | ForEach-Object { 
+                    
+            if ($FileItem.Name -match '(?<AppName>\S+)\.log(?<Date>(?<Year>\d{4})(?<Month>\d{2})(?<Day>\d{2}))\.{0,1}\d*') 
+           
+            {
+    
+                try 
+                {
+                    $LogDate = [DateTime]::new($Matches['Year'],$Matches['Month'],$Matches['Day'])
+                    [PSCustomObject]@{
+               
+                        LogDate = $LogDate
+                        ShortDateString = $Logdate.ToString('yyyy-MM-dd') 
+                        LastWriteTime = $FileItem.LastWriteTime
+                        FullName = $FileItem.FullName
+                        Name = $FileItem.Name
+                        Length = $FileItem.Length
+                        AppName = $Matches['AppName']
+                        AppRoot = $AppRoot
+                    }
+                } 
+                
+                catch 
+                
+                {
+                
+                Write-Log -Message "Skipping $($FileItem.FullName) Error: $($Error[0].Exception.Message)" -Level Error
+                
+                }
+            }
+        }
+    }
+    }
 function Backup-OperationLogs {
     [CmdletBinding()]
     param (
@@ -121,7 +191,7 @@ function Backup-OperationLogs {
             $FileItems | Where-Object { $_.Name -like '*.log' } | Move-Item -Destination  $ServerLogFolder -ErrorAction Stop | Out-Null
         }
         catch {
-            Write-Log -Message "Could not create foldr $ServerLogFolder Error: $($Error[0].Exception.Message)" -Level Error 
+            Write-Log -Message "Could not create folder $ServerLogFolder Error: $($Error[0].Exception.Message)" -Level Error 
         }
         
     }
@@ -142,11 +212,11 @@ Function Remove-OldZips {
         
     $ArchiveServerPath = "$ArchivePath\\$($Env:ComputerName)\"
     
-    $ZipFileItems = Get-ChildItem -Path $ArchiveServerPath -Recurse -File | Where-Object { $_.Name -match '\.(?<ComputerName>\S+)\.,(?<WebSite>(\s|\S)+),(?<Date>\S+)\.zip' }
+    $ZipFileItems = Get-ChildItem -Path $ArchiveServerPath -Recurse -File | Where-Object { $_.Name -match '\.(?<ComputerName>\S+)\.,(?<AppRoot>(\s|\S)+),,(?<AppName>(\s|\S)+),,(?<Date>\S+)\.zip' }
     
     Foreach ($ZipFileItem in $ZipFileItems) {
-        $ZipFileItem -match '\.(?<ComputerName>\S+)\.,(?<WebSite>(\s|\S)+),(?<Date>\S+)\.zip' | Out-Null
-        $ArchiveDays = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key "$($Matches['WebSite'])" -Setting ArchiveDays -Verbose
+        $ZipFileItem -match '\.(?<ComputerName>\S+)\.,(?<AppRoot>(\s|\S)+),,(?<AppName>(\s|\S)+),,(?<Date>\S+)\.zip' | Out-Null
+        $ArchiveDays = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key "$($Matches['AppRoot'])" -Setting ArchiveDays -Verbose
     
         if (((Get-date) - (Get-ZipDate -FileName ($ZipFileItem.FullName))).TotalDays -gt $ArchiveDays) {
         
@@ -165,27 +235,6 @@ Function Remove-OldZips {
     
 }
 
-Function Get-WebSiteFromZip {
-    [CmdletBinding()]
-    Param(
-    
-        [string]$FileName
-    
-    )
-    
-    if ($FileName -match '\.(?<ComputerName>\S+)\.,(?<WebSite>(\s|\S)+),(?<Date>\S+)\.zip') {
-    
-        $Matches["WebSite"]
-    
-    }
-    else {
-    
-        Write-Error "Could not get WebSite name from $FileName"
-    
-    }
-    
-}
-
 Function Get-ZipDate {
     [CmdletBinding()]
     Param(
@@ -194,7 +243,8 @@ Function Get-ZipDate {
     
     )
     
-    if ($FileName -match '\.(?<ComputerName>\S+)\.,(?<WebSite>(\s|\S)+),(?<Date>\S+)\.zip') {
+    if ($FileName -match '\.(?<ComputerName>\S+)\.,(?<AppRoot>(\s|\S)+),,(?<AppName>(\s|\S)+),,(?<Date>\S+)\.zip') {
+        
     
         $Date = $Matches["Date"] -as [DateTime]
     
@@ -314,8 +364,8 @@ Function Get-ArchiveFolder {
         [string]$ArchivePath
     )
     try {
-        if (!((Get-PSDrive).Where{ $_.Name -eq 'ArchiveIISLogs' } )) {
-            New-PSDrive -Name ArchiveIISLogs -PSProvider FileSystem -Root $ArchivePath  -ErrorAction Stop  -Scope Script | Out-Null
+        if (!((Get-PSDrive).Where{ $_.Name -eq 'ArchiveGenericAppLogs' } )) {
+            New-PSDrive -Name ArchiveGenericAppLogs -PSProvider FileSystem -Root $ArchivePath  -ErrorAction Stop  -Scope Script | Out-Null
         }
     }
     Catch {
@@ -324,9 +374,9 @@ Function Get-ArchiveFolder {
         Write-Log -Message $Message -Level Error
     } 
     
-    if (!(Test-Path -Path "ArchiveIISLogs:\$($env:COMPUTERNAME)")) {
+    if (!(Test-Path -Path "ArchiveGenericAppLogs:\$($env:COMPUTERNAME)")) {
         try {
-            New-Item -Path "ArchiveIISLogs:\" -Name ($env:COMPUTERNAME) -ItemType "directory" -ErrorAction Stop
+            New-Item -Path "ArchiveGenericAppLogs:\" -Name ($env:COMPUTERNAME) -ItemType "directory" -ErrorAction Stop
             Write-Log  -Message  "Created $($env:COMPUTERNAME) Folder in $ArchivePath"
         }
         Catch {
@@ -335,7 +385,7 @@ Function Get-ArchiveFolder {
             Write-Log -Message $Message -Level Error
         }
     }
-    else { Get-Item -Path "ArchiveIISLogs:\$($env:COMPUTERNAME)" }
+    else { Get-Item -Path "ArchiveGenericAppLogs:\$($env:COMPUTERNAME)" }
 }
     
 
@@ -709,17 +759,18 @@ function Backup-Logs {
         foreach ($item in $Path) {
             if ((test-path -path $item)) {
 
-                Get-ChildItem -Path $item -File | Where-Object { $_.Name -match '\.(?<ComputerName>\S+)\.,(?<WebSite>(\s|\S)+),(?<Date>\S+)\.zip' } | ForEach-Object {
+                Get-ChildItem -Path $item -File | Where-Object { $_.Name -match '\.(?<ComputerName>\S+)\.,(?<AppRoot>(\s|\S)+),,(?<AppName>(\s|\S)+),,(?<Date>\S+)\.zip' } | ForEach-Object {
                     $ComputerName = $matches['ComputerName']
-                    $WebSite = $matches['WebSite']
-                    Write-Log -Message "ComputerName = $ComputerName ,Web Site = $WebSite ,Date = $($matches['Date'])"
+                    #$AppName = $matches['AppName']
+                    $AppRoot = $matches['AppRoot']
+                    Write-Log -Message "ComputerName = $ComputerName ,AppRoot = $AppRoot , AppRoot = $AppRoot , Date = $($matches['Date'])"
                     # Generate the actual path including servername
                     $ArchiveServerPath = "$ArchivePath\\$ComputerName\"
                     Write-Log -Message "Path to copy = $ArchiveServerPath"
-                    New-Item -Path $ArchiveServerPath -Name $WebSite -Force  -ItemType Directory | out-null
+                    New-Item -Path $ArchiveServerPath -Name $AppRoot -Force  -ItemType Directory | out-null
                          
-                    Copy-Files -FilesToCopy $_.FullName -Destination "$ArchiveServerPath\$Website" -Move
-                    Write-Log -Message ("Found $($_.FullName) under $item. Copied to $ArchiveServerPath" + $WebSite + " and deleted.")
+                    Copy-Files -FilesToCopy $_.FullName -Destination "$ArchiveServerPath\$AppRoot" -Move
+                    Write-Log -Message ("Found $($_.FullName) under $item. Copied to $ArchiveServerPath and deleted.")
                 }    
                 
             
@@ -746,20 +797,21 @@ if ($Logging) {
 }
 
 # Initilizing LogFile Variable
-$Global:LogFile = "$TempFolder\Archive-IISLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
+$Global:LogFile = "$TempFolder\Archive-GenericAppLogs-Log-$(Get-Date -Format yyyy-M-d_hhmmss).log"
 
 $Message = "Script started. Username: $($env:USERDOMAIN)\$($env:USERNAME)"
 Write-Log -Message $Message -Level Info
 Write-Information -MessageData $Message
+
 # Preparing and getting the registry key
-if (!(Test-path -Path HKLM:\SOFTWARE\Archive-IISLogs)) {
-    Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs does not exist creating it"
-    New-item -Path HKLM:\SOFTWARE -Name Archive-IISLogs
-    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder
+if (!(Test-path -Path HKLM:\SOFTWARE\Archive-GenericAppLogs)) {
+    Write-Log -Message "HKLM:\SOFTWARE\Archive-GenericAppLogs does not exist creating it"
+    New-item -Path HKLM:\SOFTWARE -Name Archive-GenericAppLogs
+    New-ItemProperty -Path HKLM:\SOFTWARE\Archive-GenericAppLogs -Name TempFolder -Type string -Value $TempFolder
 }
 else {
-    Write-Log -Message "HKLM:\SOFTWARE\Archive-IISLogs exists." 
-    $RegSettings = Get-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs\
+    Write-Log -Message "HKLM:\SOFTWARE\Archive-GenericAppLogs exists." 
+    $RegSettings = Get-ItemProperty -Path HKLM:\SOFTWARE\Archive-GenericAppLogs\
     
     # if the tempfolder and registry is different grab the previous one to check later
     if ($RegSettings.TempFolder -ne $TempFolder) {
@@ -768,7 +820,7 @@ else {
     }
 
     # we have previous folder now we can set the current value to registry. 
-    Set-ItemProperty -Path HKLM:\SOFTWARE\Archive-IISLogs -Name TempFolder -Type string -Value $TempFolder
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Archive-GenericAppLogs -Name TempFolder -Type string -Value $TempFolder
 }
 
 
@@ -816,11 +868,13 @@ Import-Module WebAdministration -Verbose:$false
 
 
 # set the default settings using Paremeters supplied
-$DefaultSettings = @{Default = @{LocalDays = $LocalDays; ArchiveDays = $ArchiveDays } }
+$DefaultSettings = @{Default = @{LogFolder = $LogFolder; LocalDays = $LocalDays; ArchiveDays = $ArchiveDays} }
 
 #Map to ArchivePath
 try {
     $ArchiveFolder = Get-ArchiveFolder -ArchivePath $ArchivePath  -ErrorAction Stop
+    $Message = "Archive folder = $ArchiveFolder."
+    Write-Log -Message $Message -Level Error
 }
 Catch {
     $Message = "Cannot get Archive folder. $($Error[0].Exception.Message)"
@@ -829,7 +883,17 @@ Catch {
 }
 
 #Get the settings file if exists
-$OverrideSettings = Import-PowerShellDataFile -Path  "$($ArchiveFolder.FullName)\Archive-IISLogs.psd1" -ErrorAction SilentlyContinue
+$RootPath = Get-SettingsPath -SettingsPath $SettingsPath -ArchivePath ($ArchiveFolder)
+Write-Log "SettingsPath = $RootPath"
+try {
+    $OverrideSettings = Import-PowerShellDataFile -Path  "$RootPath\Archive-GenericAppLogs.psd1" -ErrorAction Stop    
+}
+catch {
+    $Message = "Could not import settings exiting. $($Error[0].Exception.Message)"
+    Write-Log -Message $Message -Level 'Error'
+    throw $Message
+}
+
 
 # get the site information including site name and Log Directory
 $WebSiteInfos = Get-Website | Select-Object -Property Name, ID, @{Name = 'LogDirectory'; Expression = { "$($_.LogFile.Directory)\W3SVC$($_.ID)" -Replace "%SystemDrive%", "$($env:SystemDrive)" } }
@@ -847,32 +911,44 @@ if (($TotalLogSize / 5) -gt $TempDriveFreeSpace) {
 # Initilize Queue for compression
 $Queue = New-Object -TypeName System.Collections.Queue
 
-foreach ($WebSiteInfo in $WebSiteInfos) {
-    Write-Log -Message "Working on Site: $($WebSiteInfo.Name), SiteID:  $($WebSiteInfo.ID), LogDirectory: $($WebSiteInfo.LogDirectory)"
+$OverrideSettings.Keys | ForEach-Object {
 
-    #Getting LocalDays Setting
-    $LocalDays = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key "$($WebSiteInfo.Name)" -Setting LocalDays
+    $LocalDays = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key $_ -Setting LocalDays
+    $LogFolder = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key $_ -Setting LogFolder
+    try {
     
-    #Formatting and Grouping based on dates. The Result group will be including all we need to loop in.
-    $DatesGroup = (Get-ChildItem -path ($WebSiteInfo.LogDirectory) -File).Where( { $_.LastWriteTime -lt (Get-Date).AddDays(-1 * $LocalDays) }) | Select-Object -Property FullName, Length, @{Name = 'Date'; Expression = { $_.LastWriteTime.ToString('yyyy-MM-dd') } } | Group-Object -Property Date
+        $DatesGroup = Get-Setting -DefaultSettings $DefaultSettings -OverrideSettings $OverrideSettings -Key $_ -Setting LogFolder | Get-LogFileItems -ErrorAction Stop -AppRoot $_ | Where-Object {$_.LogDate -lt (Get-Date).Adddays(-1*$LocalDays)} | Group-Object -Property Approot, AppName,ShortDateString
+    
+    }
+    catch {
+    
+    Write-Log "sorry... could not get from $($Error[0].Exception)"
+    
+    }
+    
     $TotalLogSizeToZip = [Math]::Round(($DatesGroup.Group | ForEach-Object { $_.Length } | Measure-Object -Sum).Sum / 1mb, 2)
     Write-Log -Message " Total Log Size to zip: $TotalLogSizeToZip Mbs."
     Foreach ($DateGroup in $DatesGroup) {
+        $DateGroup.Name -match '(?<AppRoot>.+),\s(?<AppName>.+),\s(?<ShortDate>.+)' | Out-Null
 
         # out "." cannot be used in ComputerNames and also "," cannot be used in websites therefore we are using as seperators in filenames
-        $ZipName = ".$($env:COMPUTERNAME).,$($WebSiteInfo.Name),$($DateGroup.Name).zip"
+        $AppName = $Matches['AppName']
+        $AppRoot = $Matches['AppRoot']
+        $ShortDate = $Matches['ShortDate']
+        $ZipName = ".$($env:COMPUTERNAME).,$($Matches['AppRoot']),,$($Matches['AppName']),,$($Matches['ShortDate']).zip"
     
         $QueueItem = [PSCustomObject]@{
             ZipName      = $ZipName
             FileItems    = $DateGroup.Group.FullName
-            WebSite      = $WebSiteInfo.Name
-            Date         = $DateGroup.Name
+            AppName      = $AppName
+            Date         = $ShortDate
             LogSizeMb    = [Math]::Round((($DateGroup.Group.Length | Measure-Object -Sum).Sum / 1mb), 2)
-            LogDirectory = $WebSiteInfo.LogDirectory
+            AppRoot      = $AppRoot
+            LogDirectory = $LogFolder
             RetryCount   = 0
         }
         $Queue.Enqueue($QueueItem)
-        Write-Log -Message "Enqueued $($QueueItem.FileItems.Count) files for $($QueueItem.Website) in $($QueueItem.ZipName) under $($QueueItem.LogDirectory) Log size for Date: $($QueueItem.Logsize) Mbs"  
+        Write-Log -Message "Enqueued $($QueueItem.FileItems.Count) files for $($QueueItem.AppName) in $($QueueItem.ZipName) under $($QueueItem.LogDirectory) Log size for Date: $($QueueItem.Logsize) Mbs"  
     }
     
 }
@@ -885,22 +961,20 @@ if ($Queue.Count -gt 0) {
     Write-Information  -MessageData 'Nothing to compress.'
 }
 
-
-
 # Removing old zips
 Remove-OldZips -OverrideSettings $OverrideSettings -DefaultSettings $DefaultSettings -ArchivePath $ArchivePath
+
 $Message = "Script ended. Duration = $([Math]::Round((((Get-Date) - $startdate).TotalSeconds),2)) seconds"
 Write-Log $Message -Level Info
 Write-Information -MessageData $Message
+
 # Backup Logs
 Backup-OperationLogs -ArchivePath $ArchivePath -LocalLogPath $TempFolder -Verbose:$false -ErrorAction Stop
     
-
 # Cleanup
-Remove-PSDrive -Name ArchiveIISLogs
+Remove-PSDrive -Name ArchiveGenericAppLogs
 
-
-#Endregion
+#Endregion 
                 ]]></ScriptBody>
                 <Parameters>
                   <Parameter>
@@ -922,6 +996,10 @@ Remove-PSDrive -Name ArchiveIISLogs
                   <Parameter>
                     <Name>Logging</Name>
                     <Value>$Config/Logging$</Value>
+                  </Parameter>
+                  <Parameter>
+                    <Name>SettingsPath</Name>
+                    <Value>$Config/SettingsPath$</Value>
                   </Parameter>
                   <Parameter>
                     <Name>InformationAction</Name>
@@ -947,36 +1025,40 @@ Remove-PSDrive -Name ArchiveIISLogs
   <LanguagePacks>
     <LanguagePack ID="ENU" IsDefault="true">
       <DisplayStrings>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs">
-          <Name>ArchiveIISLogs</Name>
-          <Description>Write Action for ArchiveIISLogs</Description>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs">
+          <Name>ArchiveGenericAppLogs</Name>
+          <Description>Write Action for ArchiveGenericAppLogs</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TimeoutSeconds">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="TimeoutSeconds">
           <Name>Timeout Seconds</Name>
           <Description>Script Timeout in Seconds</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="LocalDays">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="LocalDays">
           <Name>LocalDays</Name>
           <Description>Files older than Local days will be compressed and archived.</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchiveDays">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="ArchiveDays">
           <Name>ArchiveDays</Name>
           <Description>Zip Files in the Arcive Path older than Archive Days will be deleted. 
           
           This setting is for maintaining the remote location that holds the zip files.
         </Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="ArchivePath">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="ArchivePath">
           <Name>ArchivePath</Name>
           <Description>Location to store zip files. Preferably a remote unc path.</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="TempFolder">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="TempFolder">
           <Name>TempFolder</Name>
           <Description>Location for temporary storage. script will default into users temporary but it is recommended to dedicate  a local folder with Antivirus exclustions set.</Description>
         </DisplayString>
-        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveIISLogs" SubElementID="Logging">
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="Logging">
           <Name>Logging</Name>
           <Description>Boolean to enable disable logging. Default is enabled.</Description>
+        </DisplayString>
+        <DisplayString ElementID="IIS.Monitoring.Extensions.WriteAction.ArchiveGenericAppLogs" SubElementID="SettingsPath">
+          <Name>Logging</Name>
+          <Description>By default settings file should be located under ArchivePath but could  also located under SettingsPath</Description>
         </DisplayString>
       </DisplayStrings>
     </LanguagePack>
